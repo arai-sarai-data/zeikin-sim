@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>あなたの税金いくら？生涯税金シミュレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f6f5f1; --card:#fff; --ink:#1d1d1f; --sub:#5f6168; --line:#e4e2dc;
+  --accent:#c8372d; --accent2:#e07b39; --accent-soft:#fbeae8; --link:#2f6db5; --past:rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#141416;--card:#1f1f23;--ink:#f1f1f3;--sub:#a4a6ad;--line:#33343a;--accent:#ff6b5e;--accent2:#ff9a5c;--accent-soft:#3a201e;--link:#7fb0ff;--past:rgba(255,255,255,.05)}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","Noto Sans KR","Noto Sans SC","Apple SD Gothic Neo","Malgun Gothic","PingFang SC","Microsoft YaHei",system-ui,sans-serif;line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{max-width:980px;margin:0 auto;padding:12px 14px 60px}
+.topbar{display:flex;justify-content:flex-end}
+.topbar select{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--card);color:var(--ink)}
+header h1{font-size:clamp(24px,6vw,38px);font-weight:900;margin:6px 0 4px;letter-spacing:.01em;line-height:1.25}
+header h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+header p{margin:0;color:var(--sub);font-size:14px}
+nav.tabs{display:flex;gap:6px;margin:16px 0 12px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+nav.tabs a{flex:1;text-align:center;text-decoration:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 4px;border-radius:10px;font-weight:700;font-size:14px}
+nav.tabs a.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.card h2{font-size:18px;margin:0 0 10px}
+.card h3{font-size:15px;margin:18px 0 8px;color:var(--sub);border-top:1px dashed var(--line);padding-top:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+label.f{display:flex;flex-direction:column;font-size:13px;color:var(--sub);gap:4px}
+label.f input,label.f select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+.unit{display:flex;align-items:center;gap:6px}.unit span{color:var(--sub);font-size:14px;white-space:nowrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--card);color:var(--ink);padding:9px 10px;font:inherit;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff;font-weight:700}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px}
+.chk input{width:20px;height:20px;flex:none}
+.modebar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.hero{background:linear-gradient(135deg,var(--accent-soft),var(--card));border-color:transparent}
+.hero .big{font-size:clamp(36px,11vw,64px);font-weight:900;color:var(--accent);line-height:1.1;margin:4px 0;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.hero .lead{font-size:14px;color:var(--sub)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+.kpi{background:var(--card);border-radius:12px;padding:10px 12px;border:1px solid var(--line)}
+.kpi b{display:block;font-size:19px;font-variant-numeric:tabular-nums;line-height:1.35}
+.kpi small{color:var(--sub);font-size:12px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.fact{border-radius:14px;padding:14px;background:var(--bg);border:1px solid var(--line)}
+.fact .k{font-size:12px;color:var(--sub);font-weight:700;letter-spacing:.04em}
+.fact .v{font-size:clamp(26px,7vw,34px);font-weight:900;color:var(--accent);line-height:1.2;margin:2px 0 4px;font-variant-numeric:tabular-nums}
+.fact p{margin:0;font-size:14px}
+.fact b{color:var(--accent)}
+.meter{height:10px;border-radius:5px;background:var(--line);overflow:hidden;margin-top:8px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--sub);font-weight:500}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.me td{background:var(--accent-soft);font-weight:700}
+#quick{font-size:13px}#quick td,#quick th{padding:7px 3px;white-space:nowrap}
+@media(max-width:400px){#quick{font-size:12px}#quick td,#quick th{padding:6px 2px}}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle;flex:none}
+.bar{height:14px;border-radius:7px;overflow:hidden;display:flex;margin:10px 0 4px;background:var(--line)}
+.bar i{display:block;height:100%}
+.note{font-size:12px;color:var(--sub)}
+.chartbox{position:relative;height:320px}
+details summary{cursor:pointer;font-weight:700;padding:6px 0}
+.hide{display:none!important}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--accent);color:#fff;margin-top:2px;font-weight:500;white-space:nowrap}
+.db td:first-child{font-weight:700;min-width:7em}
+a{color:var(--link)}
+.scroll{overflow-x:auto}
+.sec-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-size:14px;font-weight:700;border:0;border-radius:10px;padding:10px 14px;background:var(--ink);color:var(--bg);cursor:pointer;text-decoration:none;display:inline-block}
+.btn.x{background:#000;color:#fff}
+.use{display:grid;gap:8px;margin-top:8px}
+.use .row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;font-size:14px}
+.use .track{grid-column:1/-1;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.use .track i{display:block;height:100%;background:var(--accent)}
+.compare{display:grid;grid-template-columns:minmax(0,auto) 1fr auto;gap:6px 10px;align-items:center;font-size:14px;margin-top:8px}
+.compare .track{height:12px;border-radius:6px;background:var(--line);overflow:hidden;min-width:60px}
+.compare .track i{display:block;height:100%}
+.sharecard{border-radius:18px;padding:20px;color:#fff;background:radial-gradient(120% 120% at 0% 0%,#ff6b5e 0%,#c8372d 45%,#5a1410 100%);position:relative;overflow:hidden}
+.sharecard .t{font-size:13px;opacity:.85;font-weight:700;letter-spacing:.06em}
+.sharecard .who{font-size:14px;opacity:.9;margin-top:2px}
+.sharecard .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.sharecard .lbl{font-size:12px;opacity:.8}
+.sharecard .num{white-space:nowrap;font-size:clamp(20px,6.2vw,36px);font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
+.sharecard .foot{margin-top:14px;font-size:13px;border-top:1px solid rgba(255,255,255,.3);padding-top:10px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sharecard .site{opacity:.75;font-size:11px}
+textarea.share{width:100%;min-height:96px;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--bg);color:var(--ink);margin-top:12px}
+@media(max-width:560px){.chartbox{height:260px}.compare{font-size:13px}}
+</style>
+<meta property="og:type" content="website">
+<meta property="og:title" content="あなたの税金いくら？生涯税金シミュレーター">
+<meta property="og:description" content="あなたの税金いくら？生涯税金シミュレーター">
+<meta property="og:url" content="https://arai-sarai-data.github.io/zeikin-sim/">
+<meta property="og:image" content="https://arai-sarai-data.github.io/zeikin-sim/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://arai-sarai-data.github.io/zeikin-sim/og.png">
+<link rel="canonical" href="https://arai-sarai-data.github.io/zeikin-sim/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23111%22/%3E%3Ctext x=%2232%22 y=%2244%22 font-size=%2234%22 text-anchor=%22middle%22 fill=%22%23ffd43b%22 font-family=%22sans-serif%22 font-weight=%22900%22%3E%E6%B4%97%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<div class="wrap">
+<div class="topbar"><select id="lang" aria-label="Language"></select></div>
+<header>
+  <h1 id="h1"></h1>
+  <p data-t="subtitle"></p>
+</header>
+
+<nav class="tabs">
+  <a href="#sim" data-tab="sim" class="on" data-t="tab_sim"></a>
+  <a href="#db" data-tab="db" data-t="tab_db"></a>
+  <a href="#about" data-tab="about" data-t="tab_about"></a>
+</nav>
+
+<!-- ============ シミュレーター ============ -->
+<section id="tab-sim">
+<div class="card">
+  <div class="modebar">
+    <h2 style="margin:0" data-t="yourInfo"></h2>
+    <div class="seg" id="mode" style="min-width:210px">
+      <button data-v="easy" class="on" data-t="easy"></button><button data-v="detail" data-t="detail"></button>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:12px">
+    <label class="f"><span data-t="workType"></span>
+      <select id="type"><option value="emp" data-t="emp"></option><option value="self" data-t="self"></option></select>
+    </label>
+    <label class="f"><span data-t="age"></span><div class="unit"><input id="age" type="number" inputmode="numeric" value="35" min="15" max="100"><span data-t="ageU"></span></div></label>
+    <label class="f"><span id="incLabel"></span><div class="unit"><input id="inc" type="number" inputmode="numeric" value="500" min="0" step="10"><span data-t="manU"></span></div></label>
+    <label class="f"><span data-t="pref"></span><select id="pref"></select></label>
+  </div>
+
+  <div id="detail" class="hide">
+    <h3 data-t="famH"></h3>
+    <div class="grid">
+      <label class="chk"><input type="checkbox" id="spouse"><span data-t="spouse"></span></label>
+      <label class="f"><span data-t="kids"></span><input id="kids" type="text" data-tp="kidsPh"></label>
+      <label class="f"><span data-t="ideco"></span><div class="unit"><input id="ideco" type="number" inputmode="numeric" value="0" step="1" min="0"><span data-t="manYearU"></span></div></label>
+      <label class="f"><span data-t="lifeIns"></span>
+        <select id="life"><option value="0" data-t="none"></option><option value="1" data-t="li1"></option><option value="2" data-t="li2"></option><option value="3" data-t="li3"></option></select>
+      </label>
+    </div>
+    <h3 id="h-emp"></h3>
+    <div class="grid" id="g-emp">
+      <label class="f"><span data-t="hrate"></span><div class="unit"><input id="hrate" type="number" step="0.01" value="9.90"><span>%</span></div><span class="note" data-t="hrateNote"></span></label>
+      <label class="f"><span data-t="bonus"></span><div class="unit"><input id="bonus" type="number" step="0.5" value="0" min="0"><span data-t="monthsU"></span></div></label>
+      <label class="chk"><input type="checkbox" id="showEmployer"><span data-t="showEmployer"></span></label>
+    </div>
+    <div class="grid hide" id="g-self">
+      <label class="chk"><input type="checkbox" id="aoiro" checked><span data-t="aoiro"></span></label>
+      <label class="chk"><input type="checkbox" id="jigyo" checked><span data-t="jigyo"></span></label>
+    </div>
+    <h3 data-t="kokuhoH"></h3>
+    <p class="note" style="margin:0 0 8px" data-t="kokuhoNote"></p>
+    <div class="grid">
+      <label class="f"><span data-t="nkRate"></span><div class="unit"><input id="nkRate" type="number" step="0.01"><span>%</span></div></label>
+      <label class="f"><span data-t="nkEq"></span><div class="unit"><input id="nkEq" type="number" step="100"><span data-t="yenU"></span></div></label>
+      <label class="f"><span data-t="nkKRate"></span><div class="unit"><input id="nkKRate" type="number" step="0.01"><span>%</span></div></label>
+      <label class="f"><span data-t="nkKEq"></span><div class="unit"><input id="nkKEq" type="number" step="100"><span data-t="yenU"></span></div></label>
+    </div>
+    <h3 data-t="livingH"></h3>
+    <div class="grid">
+      <label class="f"><span data-t="spend"></span><div class="unit"><input id="spend" type="number" inputmode="numeric" data-tp="auto" step="1" min="0"><span data-t="manU"></span></div></label>
+      <label class="f"><span data-t="food"></span><div class="unit"><input id="food" type="number" value="25" step="1" min="0" max="100"><span>%</span></div></label>
+      <label class="f"><span data-t="tabaco"></span><div class="unit"><input id="tabaco" type="number" value="0" step="0.5" min="0"><span data-t="packsU"></span></div></label>
+      <label class="f"><span data-t="beer"></span><div class="unit"><input id="beer" type="number" value="0" step="1" min="0"><span data-t="cansU"></span></div></label>
+      <label class="f"><span data-t="car"></span>
+        <select id="car"><option value="none" data-t="car_none"></option><option value="kei" data-t="car_kei"></option><option value="c15" data-t="car_c15"></option><option value="c20" data-t="car_c20"></option><option value="c25" data-t="car_c25"></option></select>
+      </label>
+      <label class="f"><span data-t="gas"></span><div class="unit"><input id="gas" type="number" value="40" step="5" min="0"><span data-t="lMonthU"></span></div></label>
+      <label class="f"><span data-t="kotei"></span><div class="unit"><input id="kotei" type="number" value="0" step="1" min="0"><span data-t="manYearU"></span></div></label>
+    </div>
+    <h3 data-t="lifeSetH"></h3>
+    <div class="grid">
+      <label class="f"><span data-t="start"></span><div class="unit"><input id="start" type="number" value="22" min="15" max="70"><span data-t="ageU"></span></div></label>
+      <label class="f"><span data-t="retire"></span><div class="unit"><input id="retire" type="number" value="65" min="30" max="90"><span data-t="ageU"></span></div></label>
+      <label class="f"><span data-t="lifeEnd"></span><div class="unit"><input id="life_end" type="number" value="85" min="50" max="110"><span data-t="ageU"></span></div></label>
+      <label class="f"><span data-t="growth"></span><div class="unit"><input id="growth" type="number" value="0" step="0.5"><span data-t="growthU"></span></div></label>
+      <label class="chk"><input type="checkbox" id="curve" checked><span data-t="curve"></span></label>
+      <label class="f"><span data-t="spendR"></span><div class="unit"><input id="spendR" type="number" data-tp="auto" step="1" min="0"><span data-t="manU"></span></div></label>
+    </div>
+  </div>
+  <p class="note" id="fixNote" style="margin:12px 0 0;color:var(--accent)"></p>
+  <p class="note" style="margin:6px 0 0" data-t="privacy"></p>
+</div>
+
+<div class="card hero">
+  <div class="lead" data-t="heroLead"></div>
+  <div class="big" id="yTotal">—</div>
+  <div class="lead" id="yLead"></div>
+  <div class="kpis">
+    <div class="kpi"><small data-t="perMonth"></small><b id="kMonth">—</b></div>
+    <div class="kpi"><small data-t="perDay"></small><b id="kDay">—</b></div>
+    <div class="kpi"><small id="kRateL"></small><b id="kRate">—</b></div>
+    <div class="kpi"><small data-t="net"></small><b id="kNet">—</b></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 data-t="factH"></h2>
+  <div class="facts">
+    <div class="fact"><div class="k" data-t="freedom"></div><div class="v" id="fDay">—</div><p id="fDayTxt"></p><div class="meter"><i id="fDayBar"></i></div></div>
+    <div class="fact"><div class="k" data-t="hours"></div><div class="v" id="fHour">—</div><p id="fHourTxt"></p><div class="meter"><i id="fHourBar"></i></div></div>
+    <div class="fact" id="fRankBox"><div class="k" data-t="rank"></div><div class="v" id="fRank">—</div><p id="fRankTxt"></p><div class="meter"><i id="fRankBar"></i></div></div>
+    <div class="fact"><div class="k" data-t="sec"></div><div class="v" id="fSec">—</div><p id="fSecTxt"></p></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 data-t="breakdownH"></h2>
+  <div class="bar" id="yBar"></div>
+  <div class="scroll"><table id="yTable"></table></div>
+  <p class="note" id="empNote"></p>
+</div>
+
+<div class="card">
+  <h2 data-t="compareH"></h2>
+  <div class="compare" id="compare"></div>
+  <p class="note" data-t="compareNote"></p>
+</div>
+
+<div class="card">
+  <h2 data-t="useH"></h2>
+  <p class="note" style="margin:0" id="useLead"></p>
+  <div class="use" id="use"></div>
+  <p class="note" data-t="useNote"></p>
+</div>
+
+<div class="card hero">
+  <div class="lead" id="lLeadTop"></div>
+  <div class="big" id="lTotal">—</div>
+  <div class="kpis">
+    <div class="kpi"><small data-t="pastPaid"></small><b id="lPast">—</b></div>
+    <div class="kpi"><small data-t="futurePay"></small><b id="lFuture">—</b></div>
+    <div class="kpi"><small data-t="lifeRate"></small><b id="lRate">—</b></div>
+    <div class="kpi"><small data-t="pensionL"></small><b id="lPension">—</b></div>
+  </div>
+  <p class="lead" id="lYears" style="margin:10px 0 0"></p>
+</div>
+
+<div class="card">
+  <div class="sec-title"><h2 data-t="chartH"></h2><span class="note" data-t="chartNote"></span></div>
+  <div class="chartbox"><canvas id="chart" role="img"></canvas></div>
+  <div id="legend" class="note" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 12px"></div>
+</div>
+
+<div class="card">
+  <h2 data-t="lifeBreakH"></h2>
+  <div class="bar" id="lBar"></div>
+  <div class="scroll"><table id="lTable"></table></div>
+  <details style="margin-top:10px"><summary data-t="yearly"></summary><div class="scroll"><table id="yearTable"></table></div></details>
+</div>
+
+<div class="card">
+  <h2 data-t="quickH"></h2>
+  <p class="note" style="margin:0 0 6px" id="quickNote"></p>
+  <div class="scroll"><table id="quick"></table></div>
+</div>
+
+<div class="card">
+  <h2 data-t="shareH"></h2>
+  <div class="sharecard" id="sharecard">
+    <div class="t" data-t="shareCardT"></div>
+    <div class="who" id="scWho"></div>
+    <div class="row2">
+      <div><div class="lbl" data-t="shareYear"></div><div class="num" id="scYear"></div></div>
+      <div><div class="lbl" data-t="shareLife"></div><div class="num" id="scLife"></div></div>
+    </div>
+    <div class="foot"><span id="scFoot"></span><span class="site" data-t="title"></span></div>
+  </div>
+  <textarea class="share" id="shareText" readonly></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+    <button class="btn" id="copyBtn" data-t="copy"></button>
+    <a class="btn x" id="xBtn" target="_blank" rel="noopener" data-t="postX"></a>
+    <span class="note" id="copyMsg"></span>
+  </div>
+</div>
+</section>
+
+<!-- ============ データベース ============ -->
+<section id="tab-db" class="hide">
+<div class="card">
+  <h2 data-t="dbH"></h2>
+  <p class="note" data-t="dbNote"></p>
+  <label class="f" style="margin-bottom:8px"><span data-t="filter"></span><input id="dbq" type="text" data-tp="filterPh"></label>
+  <div class="scroll"><table class="db" id="dbTable"></table></div>
+</div>
+<div class="card">
+  <h2 data-t="prefH"></h2>
+  <p class="note" data-t="prefNote"></p>
+  <div class="scroll"><table id="prefTable"></table></div>
+</div>
+</section>
+
+<!-- ============ 前提 ============ -->
+<section id="tab-about" class="hide">
+<div class="card">
+  <h2 data-t="aboutH"></h2>
+  <ul style="padding-left:1.2em;font-size:14px" id="aboutList"></ul>
+  <p class="note" data-t="updated"></p>
+</div>
+</section>
+</div>
+
+<script>
+/* ===================== 制度データ（2026年） ===================== */
+const Y0 = 2026;
+// 都道府県: [協会けんぽ健康保険料率%, 後期高齢 医療分均等割, 医療分所得割%, 子ども分均等割, 子ども分所得割%]
+const PREF = {
+ '全国平均':[9.90,56083,10.17,1351,0.25],
+ '北海道':[10.28,59963,11.61,1364,0.28],'青森県':[9.85,50500,9.00,1300,0.20],'岩手県':[9.51,48800,8.50,1366,0.26],'宮城県':[10.10,52200,9.12,1370,0.25],
+ '秋田県':[10.01,55996,9.73,1350,0.25],'山形県':[9.75,52500,9.63,1373,0.25],'福島県':[9.50,49000,9.24,1400,0.25],'茨城県':[9.52,49500,9.32,1400,0.28],
+ '栃木県':[9.82,49100,9.00,1300,0.25],'群馬県':[9.68,54600,9.78,1400,0.25],'埼玉県':[9.67,52370,9.49,1330,0.25],'千葉県':[9.73,51000,9.40,1310,0.25],
+ '東京都':[9.85,53300,9.88,1300,0.26],'神奈川県':[9.92,52531,10.30,1330,0.25],'新潟県':[9.21,49200,8.61,1354,0.26],'富山県':[9.59,55800,10.19,1373,0.26],
+ '石川県':[9.70,57300,11.14,1360,0.24],'福井県':[9.71,54140,10.83,1300,0.26],'山梨県':[9.55,52610,9.44,1330,0.25],'長野県':[9.63,48827,8.80,1339,0.25],
+ '岐阜県':[9.80,55385,9.71,1374,0.25],'静岡県':[9.61,51100,9.35,1400,0.25],'愛知県':[9.93,56130,10.48,1362,0.25],'三重県':[9.77,54843,9.53,1370,0.25],
+ '滋賀県':[9.88,55380,10.13,1340,0.25],'京都府':[9.89,59590,10.15,1350,0.25],'大阪府':[10.13,64931,11.51,1373,0.24],'兵庫県':[10.12,58427,10.77,1351,0.24],
+ '奈良県':[9.91,57100,10.63,1400,0.25],'和歌山県':[10.06,58748,10.36,1385,0.25],'鳥取県':[9.86,52138,10.64,1363,0.25],'島根県':[9.94,57170,10.02,1370,0.26],
+ '岡山県':[10.05,60100,10.88,1400,0.25],'広島県':[9.78,55090,9.93,1337,0.25],'山口県':[10.15,63513,11.36,1354,0.24],'徳島県':[10.24,60976,10.91,1356,0.25],
+ '香川県':[10.02,58000,9.93,1300,0.25],'愛媛県':[9.98,55630,9.79,1320,0.25],'高知県':[10.05,60400,10.31,1393,0.24],'福岡県':[10.11,66340,11.70,1339,0.25],
+ '佐賀県':[10.55,68700,11.79,1400,0.24],'長崎県':[10.06,56200,9.59,1300,0.25],'熊本県':[10.08,63000,11.06,1400,0.25],'大分県':[10.08,64200,11.25,1400,0.24],
+ '宮崎県':[9.77,56300,10.08,1356,0.25],'鹿児島県':[10.13,69800,11.72,1400,0.25],'沖縄県':[9.44,61000,10.81,1290,0.26]
+};
+// 国保の初期値（横浜市 令和8年度）
+const KOKUHO_DEF = {rate:8.33+2.62+0.34, eq:40870+13380+1770, kRate:2.84, kEq:16200};
+const CAR = { none:{tax:0,wt:0}, kei:{tax:10800,wt:3300}, c15:{tax:30500,wt:12300}, c20:{tax:36000,wt:16400}, c25:{tax:43500,wt:20500} };
+const GAS_TAX = 28.7 + 2.8;
+const BEER_TAX = 54.25;
+const CURVE = [[15,0.50],[20,0.60],[25,0.74],[30,0.85],[35,0.94],[40,1.00],[45,1.06],[50,1.10],[55,1.08],[60,0.78],[65,0.65],[70,0.6]];
+// 令和8年度 一般会計歳出（億円）
+const BUDGET = [['社会保障',390559],['国債の返済・利払い',312758],['地方交付税（自治体へ）',208778],['防衛',89843],['公共事業',61078],['教育・科学',60406],['その他',99670]];
+
+function curveAt(a){ const c=CURVE; if(a<=c[0][0]) return c[0][1]; if(a>=c[c.length-1][0]) return c[c.length-1][1];
+  for(let i=0;i<c.length-1;i++){ const [a0,f0]=c[i],[a1,f1]=c[i+1]; if(a>=a0&&a<=a1) return f0+(f1-f0)*(a-a0)/(a1-a0); } return 1; }
+function surtax(y){ return y<=2047 ? 0.021 : 0.01; }
+function penCap(y){ return y<=2027?650000 : y===2028?680000 : y===2029?710000 : 750000; }
+function tobaccoPerStick(y){ return y<=2026?15.244 : y===2027?15.744 : y===2028?16.244 : 16.744; }
+// 子ども・子育て支援金：総額0.6兆(2026)→0.8兆(2027)→1.0兆(2028)に比例すると仮定
+function kodomoScale(y){ return y<=2026?1 : y===2027?4/3 : 5/3; }
+function kyuyoBase(s){ if(s<=1625000) return 650000; if(s<=1800000) return s*0.4-100000; if(s<=3600000) return s*0.3+80000; if(s<=6600000) return s*0.2+440000; if(s<=8500000) return s*0.1+1100000; return 1950000; }
+function kyuyoIt(s,y){ return Math.max(0, s - Math.min(s, Math.max(kyuyoBase(s), y<=2027?740000:690000))); }
+function kyuyoRt(s){ return Math.max(0, s - Math.min(s, Math.max(kyuyoBase(s), 650000))); }
+function itBasic(g){ if(g<=4890000) return 1040000; if(g<=6550000) return 670000; if(g<=23500000) return 620000; if(g<=24000000) return 480000; if(g<=24500000) return 320000; if(g<=25000000) return 160000; return 0; }
+function rtBasic(g){ if(g<=24000000) return 430000; if(g<=24500000) return 290000; if(g<=25000000) return 150000; return 0; }
+function itCalc(t){ t=Math.floor(Math.max(0,t)/1000)*1000;
+  const B=[[1950000,.05,0],[3300000,.10,97500],[6950000,.20,427500],[9000000,.23,636000],[18000000,.33,1536000],[40000000,.40,2796000],[Infinity,.45,4796000]];
+  for(const [u,r,d] of B){ if(t<=u) return Math.max(0,t*r-d); } return 0; }
+function nenkinKojo(p){ if(p<=3300000) return 1100000; if(p<=4100000) return p*0.25+275000; if(p<=7700000) return p*0.15+685000; if(p<=10000000) return p*0.05+1455000; return 1955000; }
+function spouseDed(g){ if(g<=9000000) return [380000,330000]; if(g<=9500000) return [260000,220000]; if(g<=10000000) return [130000,110000]; return [0,0]; }
+function reduce(inc,n){ return inc<=430000?0.3 : inc<=430000+310000*n?0.5 : inc<=430000+570000*n?0.8 : 1; }
+function kokuho(inc, n, age, y, K){
+  const base=Math.max(0, inc-430000), red=reduce(inc,n), ks=kodomoScale(y);
+  const kodomoPart = 0.0034*base + 1770*n*red;          // 子ども分（横浜市）を年ごとに増やす
+  let v = Math.min(base*(K.rate/100) + K.eq*n*red + kodomoPart*(ks-1), 960000 + 30000*(ks-1));
+  if(age>=40 && age<65) v += Math.min(base*(K.kRate/100) + K.kEq*n*red, 170000);
+  return v;
+}
+function kaigo1(g){ const f = g<=0?0.5 : g<1200000?1.2 : g<2100000?1.3 : g<3200000?1.5 : g<4200000?1.7 : 1.9; return 6225*12*f; }
+function kouki(g, P, y){
+  const base=Math.max(0,g-430000), red=reduce(g,1), ks=kodomoScale(y);
+  return Math.min(base*P[2]/100 + P[1]*red, 850000) + Math.min((base*P[4]/100 + P[3]*red)*ks, 21000*ks);
+}
+
+/* ===================== 年ごとの計算 ===================== */
+// 現役：今の年齢の年収を基準にする／就職前：就職時の年収／退職後：現役時代の平均年収を基準にする
+function incomeAt(I,a){
+  const shape = x => (I.curve ? curveAt(x) : 1) * Math.pow(1+I.growth, x-I.age);
+  if(I.age >= I.retire){ let s=0,n=0; for(let x=I.start;x<I.retire;x++){ s+=shape(x); n++; } return I.inc * shape(a) / (s/n || 1); }
+  return I.inc * shape(a) / shape(Math.max(I.age, I.start));
+}
+function lifeDed(I){ return [[0,0],[40000,28000],[80000,56000],[120000,70000]][I.life]; }
+
+function computeYear(I, a, pensionGross){
+  const y = Y0 + (a - I.age);
+  const P = PREF[I.pref] || PREF['全国平均'];
+  const working = a < I.retire && a >= I.start;
+  const r = {age:a, year:y, it:0, rt:0, pen:0, health:0, koyo:0, jigyo:0, cons:0, other:0, employer:0, gross:0, pensionRecv:0, pb:0, net:0, spend:0};
+  const kidAges = I.kids.map(k=>k + (a - I.age));
+  const dep1 = kidAges.filter(k=>k>=16&&k<=18).length, dep2 = kidAges.filter(k=>k>=19&&k<=22).length;
+  const members = 1 + (I.spouse?1:0) + kidAges.filter(k=>k>=0&&k<=18).length;
+  let gIt=0, gRt=0, shaho=0;
+  const pg = a>=65 ? pensionGross : 0;
+  r.pensionRecv = pg;
+  const pInc = pg>0 ? Math.max(0, pg - nenkinKojo(pg)) : 0;
+  const elderHealth = g => a<75 ? kokuho(g, members, a, y, I.K) + (a>=65?kaigo1(g):0) : kouki(g,P,y)+kaigo1(g);
+
+  if(working && I.type==='emp'){
+    const S = incomeAt(I,a); r.gross=S;
+    const m = S/(12+I.bonus), bon = m*I.bonus;
+    const hb = Math.min(m,1390000)*12 + Math.min(bon,5730000);
+    const pb = Math.min(Math.max(m,88000), penCap(y))*12 + (I.bonus>0 ? Math.min(bon/2,1500000)*2 : 0);
+    if(a<75){
+      const hr = I.hrate/200, kr = (a>=40&&a<65)?0.0162/2:0, cr = 0.0023*kodomoScale(y)/2;
+      r.health = hb*(hr+kr+cr) + (a>=65?kaigo1(kyuyoRt(S)+pInc):0);
+      r.employer = hb*(hr+kr+cr);
+    } else {
+      r.health = kouki(kyuyoRt(S)+pInc, P, y) + kaigo1(kyuyoRt(S)+pInc);
+    }
+    r.pen = a<70 ? pb*0.0915 : 0; r.koyo = S*0.005; r.pb = a<70?pb:0;
+    r.employer += r.pen + S*0.0085 + (a<70?pb*0.0036:0) + S*0.003;
+    gIt = kyuyoIt(S,y) + pInc; gRt = kyuyoRt(S) + pInc;
+    shaho = r.health + r.pen + r.koyo + I.ideco;
+  } else if(working && I.type==='self'){
+    const Pi = incomeAt(I,a); r.gross=Pi;
+    const g = Math.max(0, Pi - (I.aoiro?Math.min(650000,Pi):0));
+    r.pen = (a<60&&a>=20) ? 17920*12 : 0;
+    r.health = elderHealth(g+pInc);
+    r.jigyo = I.jigyo ? Math.max(0, Pi-2900000)*0.05 : 0;
+    gIt = gRt = g + pInc;
+    shaho = r.pen + r.health + I.ideco;
+  } else {
+    gIt = gRt = pInc;
+    r.pen = (a<60 && a>=20) ? 17920*12 : 0;
+    r.health = a>=20 || pInc>0 ? elderHealth(pInc) : 0;
+    shaho = r.pen + r.health;
+  }
+  const [ld1,ld2] = lifeDed(I);
+  const [sp1,sp2] = I.spouse ? spouseDed(gIt) : [0,0];
+  r.it = itCalc(gIt - itBasic(gIt) - shaho - ld1 - sp1 - dep1*380000 - dep2*630000) * (1+surtax(y));
+  const nDep = (I.spouse?1:0) + dep1 + dep2 + kidAges.filter(k=>k>=0&&k<16).length;
+  const nonTax = nDep>0 ? 350000*(nDep+1)+100000+210000 : 450000;
+  if(gRt > nonTax){
+    const tRt = Math.max(0, gRt - rtBasic(gRt) - shaho - ld2 - sp2 - dep1*330000 - dep2*450000);
+    const jinteki = 50000 + (I.spouse?50000:0) + dep1*50000 + dep2*180000;
+    const adj = gRt>25000000 ? 0 : tRt<=2000000 ? Math.min(jinteki, tRt)*0.05 : Math.max(jinteki-(tRt-2000000), 50000)*0.05;
+    r.rt = Math.max(0, Math.floor(tRt/1000)*1000*0.10 - adj) + 5000;
+  }
+  const direct = r.it + r.rt + r.pen + r.health + r.koyo + r.jigyo;
+  r.net = r.gross + pg - direct;
+  let spend;
+  if(a >= I.retire) spend = I.spendR!=null ? I.spendR : Math.max(r.net*0.9/12, 130000);
+  else if(a < I.start) spend = 0;
+  else spend = I.spend!=null ? I.spend : Math.max(r.net*0.55/12, 80000);
+  r.spend = spend;
+  r.cons = 12*(spend*I.food*8/108 + spend*(1-I.food)*0.85*10/110);
+  let other = 0;
+  if(a>=20){
+    other += I.tabaco*365*20*tobaccoPerStick(y);
+    other += I.beer*52*BEER_TAX;
+    if(I.car!=='none' && a<80){ other += CAR[I.car].tax + CAR[I.car].wt + I.gas*12*GAS_TAX; }
+    other += I.kotei;
+  }
+  r.other = other;
+  return r;
+}
+
+function computeAll(I){
+  let pbSum=0, empYears=0;
+  for(let a=I.start; a<Math.min(I.retire,70); a++){ const r=computeYear(I,a,0); pbSum += r.pb; }
+  const basic = 70608*12;
+  const pension = basic + (I.type==='emp' ? pbSum*0.005481 : 0);
+  const rows=[];
+  for(let a=Math.min(I.start,I.age); a<I.end; a++){ rows.push(computeYear(I,a,pension)); }
+  const now = rows.find(r=>r.age===I.age) || computeYear(I, I.age, pension);
+  return {rows, now, pension};
+}
+
+function defaultInput(o){
+  return Object.assign({type:'emp',age:35,inc:5e6,pref:'全国平均',spouse:false,kids:[],ideco:0,life:0,hrate:9.9,bonus:0,showEmployer:false,
+    aoiro:true,jigyo:true,spend:null,spendR:null,food:.25,tabaco:0,beer:0,car:'none',gas:0,kotei:0,start:22,retire:65,end:85,growth:0,curve:true,
+    K:Object.assign({},KOKUHO_DEF)}, o||{});
+}
+/* 入力の正規化（ありえない組み合わせを直す） */
+function sanitize(I){
+  const c=(v,lo,hi,d)=> (typeof v!=='number'||!isFinite(v)) ? d : Math.min(hi,Math.max(lo,v));
+  I.age = Math.round(c(I.age,15,100,35));
+  I.inc = c(I.inc,0,1e9,5e6);
+  I.start = Math.round(c(I.start,15,90,22));
+  I.retire = Math.round(c(I.retire,I.start+1,100,65));
+  I.end = Math.round(c(I.end,50,110,85)); if(I.end<=I.age) I.end=I.age+1;
+  I.growth = c(I.growth,-0.1,0.1,0);
+  I.bonus = c(I.bonus,0,12,0);
+  I.hrate = c(I.hrate,0,20,9.9);
+  I.food = c(I.food,0,1,0.25);
+  I.ideco = c(I.ideco,0,816000,0);
+  ['tabaco','beer','gas','kotei'].forEach(k=> I[k]=c(I[k],0,1e7,0));
+  if(I.spend!=null) I.spend=c(I.spend,0,1e8,null);
+  if(I.spendR!=null) I.spendR=c(I.spendR,0,1e8,null);
+  if(!CAR[I.car]) I.car='none';
+  if(!PREF[I.pref]) I.pref='全国平均';
+  I.life = [0,1,2,3].includes(I.life)?I.life:0;
+  return I;
+}
+if(typeof module!=='undefined') module.exports={PREF,KOKUHO_DEF,BUDGET,computeYear,computeAll,defaultInput,sanitize,itCalc,kyuyoIt,kyuyoRt,itBasic,kokuho,kouki};
+
+/* ===================== 追加データ（バズ用） ===================== */
+// 国税庁 令和7年分民間給与実態統計調査 第16表：給与階級別の人数構成比（%）
+const DIST = [[0,100,7.2],[100,200,11.3],[200,300,13.1],[300,400,15.5],[400,500,15.3],[500,600,11.9],[600,700,7.8],[700,800,5.4],[800,900,3.6],[900,1000,2.5],[1000,1500,4.7],[1500,2000,1.2],[2000,2500,0.3],[2500,5000,0.4]];
+const AVG_SALARY = 4870000;            // 同調査 平均給与487万円
+const BUDGET_TOTAL = 1223092e8;        // 令和8年度 一般会計歳出 122兆3,092億円
+// 年収（円）が上位何%か
+function topPercent(inc){
+  const m = inc/1e4, tot = DIST.reduce((s,d)=>s+d[2],0); let below=0;
+  for(const [lo,hi,p] of DIST){ if(m>=hi){ below+=p; continue; } if(m>lo) below += p*(m-lo)/(hi-lo); break; }
+  return Math.max(0.1, Math.min(99.9, 100 - below/tot*100));
+}
+// 1年の負担額は国の予算の何秒分か
+function budgetSeconds(x){ return x / (BUDGET_TOTAL/(365*24*3600)); }
+if(typeof module!=='undefined') Object.assign(module.exports,{DIST,AVG_SALARY,BUDGET_TOTAL,topPercent,budgetSeconds});
+
+/* ===================== 多言語テキスト ===================== */
+const LANGS = {ja:'日本語', en:'English', zh:'简体中文', ko:'한국어'};
+const T = {
+ja:{
+ title:'あなたは、いくら税金を取られている？', subtitle:'2026年（令和8年）の公開情報で、税金・社会保険料・間接税をまとめて計算。死ぬまでにいくら払うかも試算します。',
+ tab_sim:'シミュレーター', tab_db:'データベース', tab_about:'計算の前提',
+ yourInfo:'あなたの情報', easy:'かんたん', detail:'くわしく', workType:'働き方', emp:'会社員・公務員', self:'自営業・フリーランス',
+ age:'年齢', ageU:'歳', income:'年収（額面）', incomeSelf:'所得（売上−経費）', incomeRet:'現役時代の平均年収（額面）', incomeRetSelf:'現役時代の平均所得', manU:'万円', pref:'住んでいる・働いている都道府県',
+ famH:'家族・控除', spouse:'配偶者控除を受けている（配偶者の所得62万円以下）', kids:'子どもの年齢（カンマ区切り）', kidsPh:'例: 3,10', ideco:'iDeCo掛金', manYearU:'万円/年',
+ lifeIns:'生命保険料控除（所得税）', none:'なし', li1:'4万円', li2:'8万円', li3:'12万円（上限）',
+ empH:'会社員の設定', selfH:'自営業の設定', hrate:'健康保険料率（労使合計）', hrateNote:'都道府県を選ぶと協会けんぽの率が入ります。健保組合・共済の人は書き換えてください。',
+ bonus:'ボーナス（月給の何か月分）', monthsU:'か月', showEmployer:'会社が払っている分（事業主負担）も合計に入れる', aoiro:'青色申告特別控除65万円', jigyo:'個人事業税の対象業種（税率5%）',
+ kokuhoH:'国民健康保険（自営業・退職後に使用）', kokuhoNote:'市区町村の「保険料率」のページの数字を入れると正確になります。初期値は横浜市（令和8年度）。',
+ nkRate:'所得割の合計（医療＋支援＋子ども）', nkEq:'均等割の合計（1人あたり）', nkKRate:'介護分 所得割（40〜64歳）', nkKEq:'介護分 均等割（40〜64歳）', yenU:'円',
+ livingH:'暮らし（間接税）', spend:'生活費（家賃を除く・月）', auto:'空欄＝自動', food:'うち食費の割合', tabaco:'たばこ（紙巻）', packsU:'箱/日', beer:'ビール系（350ml）', cansU:'本/週',
+ car:'車', car_none:'持っていない', car_kei:'軽自動車', car_c15:'普通車 1.0〜1.5L', car_c20:'普通車 1.5〜2.0L', car_c25:'普通車 2.0〜2.5L', gas:'ガソリン', lMonthU:'L/月', kotei:'固定資産税・都市計画税（持ち家）',
+ lifeSetH:'生涯シミュレーションの設定', start:'働き始めた年齢', retire:'退職する年齢', lifeEnd:'何歳まで生きる想定', growth:'年収の伸び（物価を除く実質）', growthU:'%/年', curve:'年齢による給与カーブを使う（若いと低く、50代がピーク）', spendR:'老後の生活費（家賃を除く・月）',
+ privacy:'入力はこの端末の中だけで計算され、どこにも送信されません。', fixPrefix:'※入力を補正しました：', fix_age:'年齢を{v}歳として計算', fix_retire:'退職年齢を{v}歳として計算', fix_end:'{v}歳までとして計算', fix_inc:'年収が空欄のため500万円として計算',
+ heroLead:'あなたが今年（2026年）払う税金・社会保険料', leadEmp:'額面年収 {v} の人の場合', leadSelf:'所得（売上−経費）{v} の人の場合', leadRet:'退職後（年金 {v}）の場合',
+ perMonth:'1か月あたり', perDay:'1日あたり', rateGross:'額面に対する割合', rateInc:'収入に対する割合', net:'手取り（年）', netFmt:'{y}（月{m}）',
+ factH:'数字でみるあなたの負担', freedom:'納税ゴール日', freedomTxt:'1月1日から<b>{d}</b>までの稼ぎは、すべて税金と保険料に消えます。',
+ hours:'1日8時間働くうち', hoursTxt:'<b>{h}時間{m}分</b>は税金と保険料のための労働です。',
+ rank:'年収ランキング', rankTxt:'あなたの年収は、会社員など5,163万人の中で<b>上位{p}%</b>です（平均は487万円）。',
+ sec:'国の予算で換算', secTxt:'国は1秒に約<b>{s}</b>を使います。あなたの1年分の負担は、国の予算の<b>{x}秒分</b>です。',
+ lifeYears:'生涯負担は平均年収の', lifeYearsTxt:'死ぬまでに払う額は、平均年収487万円の<b>{n}年分</b>です。',
+ breakdownH:'今年の内訳', colItem:'項目', colYear:'年額', colShare:'割合', total:'合計', empNote:'※このほかに会社があなたの分として約{v}の社会保険料などを払っています（「くわしく」で合計に入れられます）。',
+ compareH:'みんなと比べると', cmpDirect:'あなた（直接払う税・保険料）', cmpAll:'あなた（間接税も含む）', cmpNation:'国全体の国民負担率', cmpTax:'うち租税負担率', cmpSoc:'うち社会保障負担率',
+ compareNote:'国全体の負担率は財務省「令和8年度の国民負担率（見通し）」。国全体は企業が払う税・保険料も含み、分母も国民所得なので、あなたの割合とは単純には比べられません。',
+ useH:'あなたの国税は何に使われる？', useLead:'今年の所得税と消費税の国の分（約<b>{v}</b>）を、令和8年度の国の一般会計予算の割合で分けた場合', useNote:'国の予算は税収だけでは足りず、約4分の1を借金（国債）でまかなっています。',
+ bud:['社会保障','国債の返済・利払い','地方交付税（自治体へ）','防衛','公共事業','教育・科学','その他'],
+ lifeLead:'{a}歳から{b}歳になるまでに払う税金・社会保険料の合計', pastPaid:'これまでに払った（推計）', futurePay:'これから払う', lifeRate:'生涯の収入に対する割合', pensionL:'もらえる公的年金（65歳〜・概算）', pensionYear:'年{v}', pensionTotal:'受け取り合計 {v}',
+ chartH:'年齢ごとの負担', chartNote:'今日の物価での金額（万円）・灰色の背景は過去', chartFail:'（グラフを読み込めませんでした。下の表をご覧ください）', chartUnit:'万', nowMark:'（今）', ageSuffix:'歳', chartTotal:'合計',
+ lifeBreakH:'生涯の内訳', colLife:'生涯合計', yearly:'年ごとの明細を見る', colAge:'年齢', colYr:'年', colInc:'収入', manNote:'税・保険料の列の単位は万円',
+ quickH:'年収別 早見表', quickNote:'35歳・独身・会社員・{p}の場合（今年）。税・保険料に消費税は含みません。', colGross:'年収', colTaxes:'税・保険料', colNet:'手取り', colRate:'負担率', colTop:'上位',
+ shareH:'結果をシェア', shareCardT:'私が払っている税金', shareYear:'今年', shareLife:'生涯', copy:'文章をコピー', copied:'コピーしました', selected:'選択しました。長押しでコピーしてください', postX:'Xでポスト',
+ shareTxt:'年収{inc}・{age}歳の私が今年払う税金と社会保険料は約{y}（月{m}、収入の{r}%）。納税ゴール日は{d}。{end}歳までの合計は約{l}でした。', hashtag:'税金シミュレーター',
+ dbH:'税金・社会保険料データベース（2026年）', dbNote:'シミュレーターで使っている数字の一覧です。「変更」は2026年前後に変わった・変わる項目です。', filter:'絞り込み', filterPh:'例: 年金、たばこ、2027',
+ dbCols:['項目','かかるもの','税率・金額（2026年）','最近の変更','出典'], noMatch:'該当する項目がありません', changed:'変更',
+ prefH:'都道府県別の保険料率（令和8年度）', prefNote:'協会けんぽの健康保険料率（労使合計・介護分を除く）と、後期高齢者医療（75歳以上）の保険料率。', prefCols:['都道府県','健康保険料率','後期高齢 均等割','後期高齢 所得割'], srcLabel:'出典',
+ aboutH:'計算の前提と限界', updated:'データ更新日：2026年11月23日', langLabel:'言語',
+ about:[
+  '2026年（令和8年）の制度で計算しています。過去の年も今の制度で計算した「今の制度ならこれだけ」という目安です。',
+  '将来は、すでに決まっている変更だけを反映しています：2027年からの防衛特別所得税1%と復興特別所得税1.1%への引下げ（2047年まで）、厚生年金の標準報酬上限の段階的引上げ（75万円まで）、たばこ税の段階的引上げ、子ども・子育て支援金の段階的増加（総額0.6兆→1.0兆円に比例すると仮定）。',
+  '金額は今日の物価での値です（物価上昇分やマクロ経済スライドは含めません）。',
+  '所得税の基礎控除は令和8・9年分の額を2028年以降も使っています。実際は2年ごとに物価に合わせて見直されます。',
+  '住民税は本来「前年の所得」にかかりますが、同じ年の所得で計算しています。調整控除・非課税の判定は簡易計算です。',
+  '健康保険は協会けんぽの都道府県別料率、国民健康保険は横浜市の料率（変更可）、75歳以上は都道府県別の後期高齢者医療の料率、65歳以上の介護保険料は全国平均基準額（月6,225円）×所得段階の概算です。',
+  '子どもは16〜18歳で一般扶養、19〜22歳で特定扶養とし、23歳以上は独立したとみなします。',
+  '消費税は生活費のうち食費に8%、それ以外の85%に10%がかかると仮定。生活費が空欄なら現役時は手取りの55%、老後は年金手取りの90%（最低月13万円）とします。',
+  '公的年金は基礎年金満額＋厚生年金（標準報酬の合計×5.481/1000）の概算です。',
+  '年収ランキングは国税庁「令和7年分民間給与実態統計調査」の給与階級別分布を直線補間したものです。',
+  '相続税・贈与税・住宅購入時の税・関税などは含めていません。実際の額は源泉徴収票・住民税決定通知書などで確認してください。'],
+ NAMES:{it:'所得税（復興・防衛特別所得税込み）', rt:'住民税（森林環境税込み）', pen:'年金保険料', health:'医療・介護保険料（子ども・子育て支援金込み）', koyo:'雇用保険料', jigyo:'個人事業税', cons:'消費税', other:'その他の間接税（たばこ・酒・車・固定資産税）', employer:'会社が払っている社会保険料'},
+ SHORT:{it:'所得税', rt:'住民税', pen:'年金', health:'医療・介護', koyo:'雇用保険', jigyo:'事業税', cons:'消費税', other:'その他間接税', employer:'会社負担'}
+},
+en:{
+ title:'How much tax are you really paying?', subtitle:'Using public 2026 data for Japan, this calculates your income tax, social insurance and consumption taxes in one place — and estimates how much you will pay over your lifetime.',
+ tab_sim:'Simulator', tab_db:'Database', tab_about:'Assumptions',
+ yourInfo:'About you', easy:'Quick', detail:'Detailed', workType:'Work style', emp:'Employee / civil servant', self:'Self-employed / freelancer',
+ age:'Age', ageU:'yrs', income:'Annual salary (gross)', incomeSelf:'Business income (sales − costs)', incomeRet:'Average salary while working (gross)', incomeRetSelf:'Average business income while working', manU:'×10,000 yen', pref:'Prefecture (home or work)',
+ famH:'Family & deductions', spouse:'I claim the spouse deduction (spouse income ≤ ¥620k)', kids:'Children’s ages (comma-separated)', kidsPh:'e.g. 3,10', ideco:'iDeCo contributions', manYearU:'×10k yen/yr',
+ lifeIns:'Life insurance deduction (income tax)', none:'None', li1:'¥40,000', li2:'¥80,000', li3:'¥120,000 (max)',
+ empH:'Employee settings', selfH:'Self-employed settings', hrate:'Health insurance rate (employer + employee)', hrateNote:'Choosing a prefecture fills in the Kyokai Kenpo rate. Change it if you are in a company health insurance society or mutual aid association.',
+ bonus:'Bonus (months of salary)', monthsU:'months', showEmployer:'Include the employer’s share of social insurance in the total', aoiro:'Blue-form return special deduction (¥650k)', jigyo:'Business subject to enterprise tax (5%)',
+ kokuhoH:'National Health Insurance (used for self-employed & retirees)', kokuhoNote:'Enter the rates from your city’s website for accuracy. Defaults are Yokohama City (FY2026).',
+ nkRate:'Income-based rate (medical + support + child)', nkEq:'Per-person flat amount', nkKRate:'Long-term care rate (age 40–64)', nkKEq:'Long-term care flat amount (age 40–64)', yenU:'yen',
+ livingH:'Daily life (indirect taxes)', spend:'Living costs excl. rent (per month)', auto:'blank = auto', food:'Share spent on food', tabaco:'Cigarettes', packsU:'packs/day', beer:'Beer-type drinks (350ml)', cansU:'cans/week',
+ car:'Car', car_none:'No car', car_kei:'Kei car', car_c15:'Car 1.0–1.5L', car_c20:'Car 1.5–2.0L', car_c25:'Car 2.0–2.5L', gas:'Gasoline', lMonthU:'L/month', kotei:'Property tax (if you own a home)',
+ lifeSetH:'Lifetime settings', start:'Age you started working', retire:'Retirement age', lifeEnd:'Life expectancy', growth:'Real salary growth', growthU:'%/yr', curve:'Use an age-based salary curve (peaks in your 50s)', spendR:'Living costs after retirement (per month)',
+ privacy:'Everything is calculated on your device. Nothing is sent anywhere.', fixPrefix:'* Input adjusted: ', fix_age:'age treated as {v}', fix_retire:'retirement age treated as {v}', fix_end:'calculated up to age {v}', fix_inc:'salary was blank, so ¥5M was used',
+ heroLead:'Taxes & social insurance you pay this year (2026)', leadEmp:'For a gross salary of {v}', leadSelf:'For business income of {v}', leadRet:'After retirement (pension {v})',
+ perMonth:'Per month', perDay:'Per day', rateGross:'Share of gross pay', rateInc:'Share of income', net:'Take-home (year)', netFmt:'{y} ({m}/mo)',
+ factH:'Your burden in numbers', freedom:'Tax Freedom Day', freedomTxt:'Everything you earn from January 1 to <b>{d}</b> goes to taxes and social insurance.',
+ hours:'Of an 8-hour workday', hoursTxt:'<b>{h}h {m}min</b> is spent working for taxes and insurance.',
+ rank:'Income ranking', rankTxt:'Your salary is in the <b>top {p}%</b> of Japan’s 51.63 million full-year workers (average ¥4.87M).',
+ sec:'In government-budget time', secTxt:'Japan’s national budget spends about <b>{s}</b> every second. Your whole year of payments covers just <b>{x} seconds</b>.',
+ lifeYears:'Lifetime total in average salaries', lifeYearsTxt:'What you pay over your life equals <b>{n} years</b> of the average salary (¥4.87M).',
+ breakdownH:'This year’s breakdown', colItem:'Item', colYear:'Per year', colShare:'Share', total:'Total', empNote:'* Your employer also pays about {v} in social insurance on your behalf (you can include it in “Detailed”).',
+ compareH:'How you compare', cmpDirect:'You (direct taxes & insurance)', cmpAll:'You (incl. indirect taxes)', cmpNation:'Japan’s national burden ratio', cmpTax:'  of which taxes', cmpSoc:'  of which social security',
+ compareNote:'National figures are the Ministry of Finance FY2026 outlook. They include taxes paid by companies and use national income as the base, so they are not directly comparable with your personal rate.',
+ useH:'Where do your national taxes go?', useLead:'Your income tax plus the national part of consumption tax this year (about <b>{v}</b>), split by the FY2026 national budget', useNote:'Tax revenue covers only about three-quarters of the budget; the rest is borrowed through government bonds.',
+ bud:['Social security','Debt repayment & interest','Grants to local governments','Defense','Public works','Education & science','Other'],
+ lifeLead:'Total taxes & social insurance from age {a} to {b}', pastPaid:'Paid so far (est.)', futurePay:'Still to pay', lifeRate:'Share of lifetime income', pensionL:'Public pension you receive (from 65, est.)', pensionYear:'{v}/yr', pensionTotal:'Total received {v}',
+ chartH:'Burden by age', chartNote:'In today’s prices (×10k yen). Grey background = past', chartFail:'(Chart could not load — see the table below.)', chartUnit:'', nowMark:' (now)', ageSuffix:'', chartTotal:'Total',
+ lifeBreakH:'Lifetime breakdown', colLife:'Lifetime', yearly:'Show year-by-year detail', colAge:'Age', colYr:'Year', colInc:'Income', manNote:'Tax & insurance columns are in ×10,000 yen',
+ quickH:'Quick table by salary', quickNote:'Age 35, single, employee, {p} (this year). Excludes consumption tax.', colGross:'Salary', colTaxes:'Taxes & ins.', colNet:'Take-home', colRate:'Burden', colTop:'Top',
+ shareH:'Share your result', shareCardT:'The tax I pay', shareYear:'This year', shareLife:'Lifetime', copy:'Copy text', copied:'Copied', selected:'Text selected — long-press to copy', postX:'Post on X',
+ shareTxt:'At {age} with a salary of {inc}, I pay about {y} in taxes and social insurance this year ({m}/month, {r}% of income). My Tax Freedom Day is {d}. By age {end} the total comes to about {l}.', hashtag:'JapanTax',
+ dbH:'Japan tax & social insurance database (2026)', dbNote:'All figures used by the simulator. “Changed” marks items that changed around 2026.', filter:'Filter', filterPh:'e.g. pension, tobacco, 2027',
+ dbCols:['Item','Applies to','Rate / amount (2026)','Recent changes','Source'], noMatch:'No matching items', changed:'Changed',
+ prefH:'Rates by prefecture (FY2026)', prefNote:'Kyokai Kenpo health insurance rate (employer + employee, excl. long-term care) and the Late-Stage Elderly Medical Care rate (age 75+).', prefCols:['Prefecture','Health ins. rate','75+ flat amount','75+ income rate'], srcLabel:'Sources',
+ aboutH:'Assumptions & limits', updated:'Data updated: Nov 23, 2026', langLabel:'Language',
+ about:[
+  'Calculated under the 2026 rules. Past years also use today’s rules, so they show “what you would pay under today’s system.”',
+  'Only changes already enacted are reflected: from 2027 the 1% defense surtax with the reconstruction surtax cut to 1.1% (to 2047), the step-up of the pension earnings cap (to ¥750k/month), tobacco tax increases, and the child-support levy growing with its total (¥0.6T → ¥1.0T).',
+  'Amounts are in today’s prices (no inflation or pension macro-indexation).',
+  'The FY2026–27 basic deduction is used for 2028 onward; in reality it is reviewed every two years.',
+  'Resident tax is normally based on the previous year’s income; here the same year is used. Some adjustments are simplified.',
+  'Health insurance uses Kyokai Kenpo prefectural rates; National Health Insurance uses Yokohama rates (editable); 75+ uses prefectural rates; long-term care premiums for 65+ use the national average base (¥6,225/month) × income tier.',
+  'Children aged 16–18 count as general dependents and 19–22 as specified dependents; 23+ are treated as independent.',
+  'Consumption tax assumes 8% on food and 10% on 85% of other spending. If living costs are blank, 55% of take-home pay (90% of pension, min ¥130k/month after retirement) is used.',
+  'Pensions = full basic pension + employee pension (total standard pay × 5.481/1000), estimated.',
+  'The income ranking interpolates the salary distribution from the NTA 2025 Private Salary Survey.',
+  'Inheritance, gift, home-purchase taxes and customs duties are not included. Check your withholding slip and tax notices for exact figures.'],
+ NAMES:{it:'Income tax (incl. reconstruction & defense surtaxes)', rt:'Resident tax (incl. forest environment tax)', pen:'Pension premiums', health:'Health & long-term care (incl. child-support levy)', koyo:'Employment insurance', jigyo:'Enterprise tax', cons:'Consumption tax', other:'Other indirect taxes (tobacco, alcohol, car, property)', employer:'Employer-paid social insurance'},
+ SHORT:{it:'Income tax', rt:'Resident tax', pen:'Pension', health:'Health/care', koyo:'Employment ins.', jigyo:'Enterprise tax', cons:'Consumption tax', other:'Other indirect', employer:'Employer share'}
+},
+zh:{
+ title:'你到底被收了多少税？', subtitle:'根据2026年日本公开数据，一次算清所得税、社会保险费和间接税，并估算你一生要缴多少。',
+ tab_sim:'模拟器', tab_db:'数据库', tab_about:'计算前提',
+ yourInfo:'你的信息', easy:'简单', detail:'详细', workType:'工作方式', emp:'公司职员、公务员', self:'个体户、自由职业',
+ age:'年龄', ageU:'岁', income:'年收入（税前）', incomeSelf:'所得（营业额−经费）', incomeRet:'在职时的平均年收入（税前）', incomeRetSelf:'在职时的平均所得', manU:'万日元', pref:'居住或工作的都道府县',
+ famH:'家庭、扣除', spouse:'享受配偶者扣除（配偶所得62万日元以下）', kids:'孩子的年龄（逗号分隔）', kidsPh:'例：3,10', ideco:'iDeCo缴费', manYearU:'万日元/年',
+ lifeIns:'人寿保险费扣除（所得税）', none:'无', li1:'4万日元', li2:'8万日元', li3:'12万日元（上限）',
+ empH:'职员设置', selfH:'个体户设置', hrate:'健康保险费率（劳资合计）', hrateNote:'选择都道府县后会自动填入协会健保费率。加入企业健保组合或共济的人请自行修改。',
+ bonus:'奖金（相当于几个月工资）', monthsU:'个月', showEmployer:'将公司负担的社会保险费也计入合计', aoiro:'青色申报特别扣除65万日元', jigyo:'属于个人事业税对象行业（税率5%）',
+ kokuhoH:'国民健康保险（个体户、退休后使用）', kokuhoNote:'填入所在市区町村公布的费率会更准确。默认值为横滨市（2026年度）。',
+ nkRate:'所得比例部分合计（医疗＋支援＋儿童）', nkEq:'人均定额部分', nkKRate:'护理部分 所得比例（40〜64岁）', nkKEq:'护理部分 人均定额（40〜64岁）', yenU:'日元',
+ livingH:'生活（间接税）', spend:'生活费（不含房租、每月）', auto:'空白＝自动', food:'其中食品占比', tabaco:'香烟（卷烟）', packsU:'包/天', beer:'啤酒类（350ml）', cansU:'罐/周',
+ car:'汽车', car_none:'没有', car_kei:'轻型车', car_c15:'普通车 1.0〜1.5L', car_c20:'普通车 1.5〜2.0L', car_c25:'普通车 2.0〜2.5L', gas:'汽油', lMonthU:'升/月', kotei:'固定资产税（自有住房）',
+ lifeSetH:'终生模拟设置', start:'开始工作的年龄', retire:'退休年龄', lifeEnd:'预计寿命', growth:'年收入实际增长率', growthU:'%/年', curve:'使用年龄工资曲线（年轻时低，50多岁最高）', spendR:'退休后生活费（不含房租、每月）',
+ privacy:'所有计算都在你的设备上完成，不会发送到任何地方。', fixPrefix:'※已修正输入：', fix_age:'年龄按{v}岁计算', fix_retire:'退休年龄按{v}岁计算', fix_end:'计算到{v}岁', fix_inc:'年收入为空，按500万日元计算',
+ heroLead:'你今年（2026年）缴纳的税金和社会保险费', leadEmp:'税前年收入 {v} 的情况', leadSelf:'所得 {v} 的情况', leadRet:'退休后（养老金 {v}）的情况',
+ perMonth:'每月', perDay:'每天', rateGross:'占税前收入比例', rateInc:'占收入比例', net:'到手收入（年）', netFmt:'{y}（每月{m}）',
+ factH:'用数字看你的负担', freedom:'纳税解放日', freedomTxt:'从1月1日到<b>{d}</b>为止赚的钱，全部用来缴税和保险费。',
+ hours:'每天工作8小时中', hoursTxt:'有<b>{h}小时{m}分钟</b>是在为税金和保险费工作。',
+ rank:'年收入排名', rankTxt:'你的年收入在日本5,163万名全年工作者中位于<b>前{p}%</b>（平均487万日元）。',
+ sec:'换算成国家预算', secTxt:'日本国家预算每秒花掉约<b>{s}</b>。你一年的负担只够国家用<b>{x}秒</b>。',
+ lifeYears:'一生负担相当于平均年收入的', lifeYearsTxt:'你一生缴纳的金额相当于平均年收入487万日元的<b>{n}年份</b>。',
+ breakdownH:'今年的明细', colItem:'项目', colYear:'年额', colShare:'比例', total:'合计', empNote:'※此外公司还替你缴纳了约{v}的社会保险费等（可在“详细”中计入合计）。',
+ compareH:'和大家比一比', cmpDirect:'你（直接缴纳的税和保险费）', cmpAll:'你（含间接税）', cmpNation:'日本整体国民负担率', cmpTax:'其中租税负担率', cmpSoc:'其中社会保障负担率',
+ compareNote:'整体负担率来自日本财务省“2026年度国民负担率（预测）”。整体数据包含企业缴纳的税费，分母为国民所得，不能与个人比例直接比较。',
+ useH:'你的国税用在哪里？', useLead:'将今年的所得税和消费税中的国家部分（约<b>{v}</b>）按2026年度国家一般会计预算比例分配', useNote:'国家预算仅靠税收不够，约四分之一靠借款（国债）。',
+ bud:['社会保障','国债偿还、利息','地方交付税（给地方政府）','防卫','公共事业','教育、科学','其他'],
+ lifeLead:'从{a}岁到{b}岁缴纳的税金和社会保险费合计', pastPaid:'已缴纳（推算）', futurePay:'今后要缴', lifeRate:'占一生收入的比例', pensionL:'可领取的公共养老金（65岁起、估算）', pensionYear:'每年{v}', pensionTotal:'领取合计 {v}',
+ chartH:'各年龄的负担', chartNote:'按今天物价计算（万日元）、灰色背景为过去', chartFail:'（图表无法加载，请看下表）', chartUnit:'万', nowMark:'（现在）', ageSuffix:'岁', chartTotal:'合计',
+ lifeBreakH:'一生的明细', colLife:'一生合计', yearly:'查看逐年明细', colAge:'年龄', colYr:'年', colInc:'收入', manNote:'税费列单位为万日元',
+ quickH:'按年收入速查表', quickNote:'35岁、单身、职员、{p}（今年）。税费不含消费税。', colGross:'年收', colTaxes:'税费', colNet:'到手', colRate:'负担率', colTop:'前',
+ shareH:'分享结果', shareCardT:'我缴纳的税金', shareYear:'今年', shareLife:'一生', copy:'复制文字', copied:'已复制', selected:'已选中，请长按复制', postX:'发布到X',
+ shareTxt:'{age}岁、年收入{inc}的我，今年要缴约{y}的税和社会保险费（每月{m}，占收入{r}%）。我的纳税解放日是{d}。到{end}岁合计约{l}。', hashtag:'日本税金',
+ dbH:'日本税金、社会保险费数据库（2026年）', dbNote:'模拟器所用数据一览。“变更”表示2026年前后有变化的项目。', filter:'筛选', filterPh:'例：养老金、香烟、2027',
+ dbCols:['项目','征收对象','税率、金额（2026年）','近期变化','出处'], noMatch:'没有符合的项目', changed:'变更',
+ prefH:'各都道府县保险费率（2026年度）', prefNote:'协会健保的健康保险费率（劳资合计，不含护理）和后期高龄者医疗（75岁以上）费率。', prefCols:['都道府县','健康保险费率','75岁以上 定额','75岁以上 所得比例'], srcLabel:'出处',
+ aboutH:'计算前提与局限', updated:'数据更新日：2026年11月23日', langLabel:'语言',
+ about:[
+  '按2026年制度计算。过去的年份也按现行制度计算，仅作“按现行制度大约如此”的参考。',
+  '未来只反映已确定的变化：2027年起的防卫特别所得税1%及复兴特别所得税降至1.1%（至2047年）、厚生年金标准报酬上限分阶段提高（至75万日元）、烟草税分阶段提高、儿童育儿支援金分阶段增加（假设与总额0.6万亿→1.0万亿日元成比例）。',
+  '金额按今天的物价计算（不含通胀和养老金宏观调整）。',
+  '所得税基础扣除在2028年以后仍使用2026、27年的金额，实际每两年按物价调整。',
+  '住民税本应按上一年所得计算，这里按同一年计算，部分调整为简化计算。',
+  '健康保险用协会健保各都道府县费率，国民健康保险用横滨市费率（可修改），75岁以上用各都道府县后期高龄者医疗费率，65岁以上护理保险费按全国平均基准额（每月6,225日元）×所得档次估算。',
+  '16〜18岁的孩子按一般抚养、19〜22岁按特定抚养计算，23岁以上视为独立。',
+  '消费税假设食品8%，其他支出的85%为10%。生活费留空时，在职按到手收入的55%，退休后按养老金到手的90%（每月至少13万日元）。',
+  '养老金为基础养老金全额＋厚生年金（标准报酬合计×5.481/1000）的估算。',
+  '年收入排名根据日本国税厅“2025年民间工资实态统计调查”的收入分布线性插值。',
+  '不含遗产税、赠与税、购房相关税和关税。实际金额请以扣缴凭单和纳税通知书为准。'],
+ NAMES:{it:'所得税（含复兴、防卫特别所得税）', rt:'住民税（含森林环境税）', pen:'养老金保险费', health:'医疗、护理保险费（含儿童育儿支援金）', koyo:'雇佣保险费', jigyo:'个人事业税', cons:'消费税', other:'其他间接税（烟、酒、车、固定资产税）', employer:'公司负担的社会保险费'},
+ SHORT:{it:'所得税', rt:'住民税', pen:'养老金', health:'医疗、护理', koyo:'雇佣保险', jigyo:'事业税', cons:'消费税', other:'其他间接税', employer:'公司负担'}
+},
+ko:{
+ title:'당신은 세금을 얼마나 내고 있을까?', subtitle:'2026년 일본 공개 자료로 소득세·사회보험료·간접세를 한 번에 계산하고, 평생 얼마를 내는지도 추산합니다.',
+ tab_sim:'시뮬레이터', tab_db:'데이터베이스', tab_about:'계산 전제',
+ yourInfo:'나의 정보', easy:'간단', detail:'자세히', workType:'근무 형태', emp:'회사원·공무원', self:'자영업·프리랜서',
+ age:'나이', ageU:'세', income:'연봉(세전)', incomeSelf:'소득(매출−경비)', incomeRet:'재직 시 평균 연봉(세전)', incomeRetSelf:'재직 시 평균 소득', manU:'만 엔', pref:'거주 또는 근무 도도부현',
+ famH:'가족·공제', spouse:'배우자 공제를 받고 있음(배우자 소득 62만 엔 이하)', kids:'자녀 나이(쉼표로 구분)', kidsPh:'예: 3,10', ideco:'iDeCo 납입액', manYearU:'만 엔/년',
+ lifeIns:'생명보험료 공제(소득세)', none:'없음', li1:'4만 엔', li2:'8만 엔', li3:'12만 엔(상한)',
+ empH:'회사원 설정', selfH:'자영업 설정', hrate:'건강보험료율(노사 합계)', hrateNote:'도도부현을 고르면 협회건보 요율이 들어갑니다. 건강보험조합·공제조합 가입자는 직접 수정하세요.',
+ bonus:'보너스(월급의 몇 개월분)', monthsU:'개월', showEmployer:'회사가 내는 사회보험료(사업주 부담)도 합계에 포함', aoiro:'청색신고 특별공제 65만 엔', jigyo:'개인사업세 대상 업종(세율 5%)',
+ kokuhoH:'국민건강보험(자영업·퇴직 후에 사용)', kokuhoNote:'거주 시구정촌의 보험료율을 입력하면 더 정확합니다. 기본값은 요코하마시(2026년도).',
+ nkRate:'소득비례분 합계(의료＋지원＋아동)', nkEq:'1인당 정액분', nkKRate:'개호분 소득비례(40〜64세)', nkKEq:'개호분 정액(40〜64세)', yenU:'엔',
+ livingH:'생활(간접세)', spend:'생활비(월세 제외·월)', auto:'비우면 자동', food:'그중 식비 비율', tabaco:'담배(궐련)', packsU:'갑/일', beer:'맥주류(350ml)', cansU:'캔/주',
+ car:'자동차', car_none:'없음', car_kei:'경자동차', car_c15:'일반차 1.0〜1.5L', car_c20:'일반차 1.5〜2.0L', car_c25:'일반차 2.0〜2.5L', gas:'휘발유', lMonthU:'L/월', kotei:'고정자산세(자가 주택)',
+ lifeSetH:'평생 시뮬레이션 설정', start:'일을 시작한 나이', retire:'퇴직 나이', lifeEnd:'예상 수명', growth:'연봉 실질 상승률', growthU:'%/년', curve:'나이별 급여 곡선 사용(젊을 때 낮고 50대에 최고)', spendR:'노후 생활비(월세 제외·월)',
+ privacy:'모든 계산은 이 기기 안에서만 이뤄지며 어디에도 전송되지 않습니다.', fixPrefix:'※입력을 보정했습니다: ', fix_age:'나이를 {v}세로 계산', fix_retire:'퇴직 나이를 {v}세로 계산', fix_end:'{v}세까지 계산', fix_inc:'연봉이 비어 있어 500만 엔으로 계산',
+ heroLead:'올해(2026년) 내는 세금·사회보험료', leadEmp:'세전 연봉 {v}인 경우', leadSelf:'소득 {v}인 경우', leadRet:'퇴직 후(연금 {v})인 경우',
+ perMonth:'한 달', perDay:'하루', rateGross:'세전 대비 비율', rateInc:'수입 대비 비율', net:'실수령액(연)', netFmt:'{y} (월 {m})',
+ factH:'숫자로 보는 나의 부담', freedom:'세금 해방일', freedomTxt:'1월 1일부터 <b>{d}</b>까지 번 돈은 모두 세금과 보험료로 나갑니다.',
+ hours:'하루 8시간 일하는 중', hoursTxt:'<b>{h}시간 {m}분</b>은 세금과 보험료를 위한 노동입니다.',
+ rank:'연봉 순위', rankTxt:'당신의 연봉은 일본 근로자 5,163만 명 중 <b>상위 {p}%</b>입니다(평균 487만 엔).',
+ sec:'국가 예산으로 환산', secTxt:'일본 정부는 1초에 약 <b>{s}</b>을 씁니다. 당신의 1년치 부담은 국가 예산의 <b>{x}초분</b>입니다.',
+ lifeYears:'평생 부담은 평균 연봉의', lifeYearsTxt:'평생 내는 금액은 평균 연봉 487만 엔의 <b>{n}년치</b>입니다.',
+ breakdownH:'올해 내역', colItem:'항목', colYear:'연간', colShare:'비율', total:'합계', empNote:'※이 밖에 회사가 당신 몫으로 약 {v}의 사회보험료 등을 내고 있습니다(“자세히”에서 합계에 포함 가능).',
+ compareH:'다른 사람과 비교하면', cmpDirect:'나(직접 내는 세금·보험료)', cmpAll:'나(간접세 포함)', cmpNation:'일본 전체 국민부담률', cmpTax:'그중 조세부담률', cmpSoc:'그중 사회보장부담률',
+ compareNote:'전체 부담률은 일본 재무성 “2026년도 국민부담률(전망)”입니다. 기업이 내는 세금·보험료를 포함하고 분모가 국민소득이므로 개인 비율과 단순 비교는 어렵습니다.',
+ useH:'나의 국세는 어디에 쓰일까?', useLead:'올해 소득세와 소비세 중 국가 몫(약 <b>{v}</b>)을 2026년도 국가 일반회계 예산 비율로 나눈 경우', useNote:'국가 예산은 세수만으로 부족해 약 4분의 1을 빚(국채)으로 충당합니다.',
+ bud:['사회보장','국채 상환·이자','지방교부세(지자체로)','방위','공공사업','교육·과학','기타'],
+ lifeLead:'{a}세부터 {b}세까지 내는 세금·사회보험료 합계', pastPaid:'지금까지 낸 금액(추정)', futurePay:'앞으로 낼 금액', lifeRate:'평생 수입 대비 비율', pensionL:'받을 공적연금(65세부터·추정)', pensionYear:'연 {v}', pensionTotal:'수령 합계 {v}',
+ chartH:'나이별 부담', chartNote:'오늘 물가 기준(만 엔)·회색 배경은 과거', chartFail:'(그래프를 불러오지 못했습니다. 아래 표를 보세요)', chartUnit:'만', nowMark:'(지금)', ageSuffix:'세', chartTotal:'합계',
+ lifeBreakH:'평생 내역', colLife:'평생 합계', yearly:'연도별 상세 보기', colAge:'나이', colYr:'연도', colInc:'수입', manNote:'세금·보험료 열의 단위는 만 엔',
+ quickH:'연봉별 조견표', quickNote:'35세·독신·회사원·{p}(올해). 세금·보험료에 소비세는 포함하지 않습니다.', colGross:'연봉', colTaxes:'세금·보험료', colNet:'실수령', colRate:'부담률', colTop:'상위',
+ shareH:'결과 공유', shareCardT:'내가 내는 세금', shareYear:'올해', shareLife:'평생', copy:'문장 복사', copied:'복사했습니다', selected:'선택했습니다. 길게 눌러 복사하세요', postX:'X에 게시',
+ shareTxt:'{age}세, 연봉 {inc}인 내가 올해 내는 세금과 사회보험료는 약 {y}(월 {m}, 수입의 {r}%). 세금 해방일은 {d}. {end}세까지 합계는 약 {l}입니다.', hashtag:'일본세금',
+ dbH:'일본 세금·사회보험료 데이터베이스(2026년)', dbNote:'시뮬레이터에 쓰인 수치 목록입니다. “변경”은 2026년 전후로 바뀐 항목입니다.', filter:'검색', filterPh:'예: 연금, 담배, 2027',
+ dbCols:['항목','대상','세율·금액(2026년)','최근 변경','출처'], noMatch:'해당 항목이 없습니다', changed:'변경',
+ prefH:'도도부현별 보험료율(2026년도)', prefNote:'협회건보 건강보험료율(노사 합계, 개호 제외)과 후기고령자의료(75세 이상) 보험료율.', prefCols:['도도부현','건강보험료율','75세+ 정액','75세+ 소득비례'], srcLabel:'출처',
+ aboutH:'계산 전제와 한계', updated:'데이터 갱신일: 2026년 11월 23일', langLabel:'언어',
+ about:[
+  '2026년 제도로 계산합니다. 과거 연도도 현행 제도로 계산한 “현행 제도라면 이 정도”라는 기준입니다.',
+  '미래는 이미 확정된 변경만 반영합니다: 2027년부터 방위특별소득세 1%와 부흥특별소득세 1.1% 인하(2047년까지), 후생연금 표준보수 상한 단계적 인상(75만 엔까지), 담배세 단계적 인상, 아동·육아 지원금 단계적 증가(총액 0.6조→1.0조 엔에 비례한다고 가정).',
+  '금액은 오늘 물가 기준입니다(물가 상승분·연금 거시경제 슬라이드 미포함).',
+  '소득세 기초공제는 2026·27년분 금액을 2028년 이후에도 사용합니다. 실제로는 2년마다 물가에 맞춰 조정됩니다.',
+  '주민세는 원래 전년도 소득 기준이지만 같은 해 소득으로 계산합니다. 일부 조정은 간이 계산입니다.',
+  '건강보험은 협회건보 도도부현별 요율, 국민건강보험은 요코하마시 요율(수정 가능), 75세 이상은 도도부현별 후기고령자의료 요율, 65세 이상 개호보험료는 전국 평균 기준액(월 6,225엔)×소득 단계로 추정합니다.',
+  '16〜18세 자녀는 일반 부양, 19〜22세는 특정 부양으로 보고, 23세 이상은 독립한 것으로 봅니다.',
+  '소비세는 식비 8%, 그 외 지출의 85%에 10%로 가정합니다. 생활비가 비어 있으면 재직 중 실수령의 55%, 퇴직 후 연금 실수령의 90%(월 최소 13만 엔)로 봅니다.',
+  '연금은 기초연금 만액＋후생연금(표준보수 합계×5.481/1000)으로 추정합니다.',
+  '연봉 순위는 일본 국세청 “2025년분 민간급여실태통계조사”의 급여 분포를 직선 보간한 것입니다.',
+  '상속세·증여세·주택 구입 관련 세금·관세는 포함하지 않습니다. 정확한 금액은 원천징수표·납세 통지서로 확인하세요.'],
+ NAMES:{it:'소득세(부흥·방위 특별소득세 포함)', rt:'주민세(삼림환경세 포함)', pen:'연금보험료', health:'의료·개호보험료(아동·육아 지원금 포함)', koyo:'고용보험료', jigyo:'개인사업세', cons:'소비세', other:'기타 간접세(담배·술·자동차·고정자산세)', employer:'회사 부담 사회보험료'},
+ SHORT:{it:'소득세', rt:'주민세', pen:'연금', health:'의료·개호', koyo:'고용보험', jigyo:'사업세', cons:'소비세', other:'기타 간접세', employer:'회사 부담'}
+}};
+
+/* 都道府県名 */
+const PREF_KEYS = ['全国平均','北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
+const PREF_NAMES = {
+ en:['National average','Hokkaido','Aomori','Iwate','Miyagi','Akita','Yamagata','Fukushima','Ibaraki','Tochigi','Gunma','Saitama','Chiba','Tokyo','Kanagawa','Niigata','Toyama','Ishikawa','Fukui','Yamanashi','Nagano','Gifu','Shizuoka','Aichi','Mie','Shiga','Kyoto','Osaka','Hyogo','Nara','Wakayama','Tottori','Shimane','Okayama','Hiroshima','Yamaguchi','Tokushima','Kagawa','Ehime','Kochi','Fukuoka','Saga','Nagasaki','Kumamoto','Oita','Miyazaki','Kagoshima','Okinawa'],
+ zh:['全国平均','北海道','青森县','岩手县','宫城县','秋田县','山形县','福岛县','茨城县','栃木县','群马县','埼玉县','千叶县','东京都','神奈川县','新潟县','富山县','石川县','福井县','山梨县','长野县','岐阜县','静冈县','爱知县','三重县','滋贺县','京都府','大阪府','兵库县','奈良县','和歌山县','鸟取县','岛根县','冈山县','广岛县','山口县','德岛县','香川县','爱媛县','高知县','福冈县','佐贺县','长崎县','熊本县','大分县','宫崎县','鹿儿岛县','冲绳县'],
+ ko:['전국 평균','홋카이도','아오모리현','이와테현','미야기현','아키타현','야마가타현','후쿠시마현','이바라키현','도치기현','군마현','사이타마현','지바현','도쿄도','가나가와현','니가타현','도야마현','이시카와현','후쿠이현','야마나시현','나가노현','기후현','시즈오카현','아이치현','미에현','시가현','교토부','오사카부','효고현','나라현','와카야마현','돗토리현','시마네현','오카야마현','히로시마현','야마구치현','도쿠시마현','가가와현','에히메현','고치현','후쿠오카현','사가현','나가사키현','구마모토현','오이타현','미야자키현','가고시마현','오키나와현']
+};
+
+/* 金額の書き方 */
+function fmtMoney(n, lang){
+  n=Math.round(n); const neg=n<0; n=Math.abs(n); let s;
+  if(lang==='en'){
+    if(n>=1e8) s='¥'+(n/1e6).toLocaleString('en-US',{maximumFractionDigits:0})+'M';
+    else if(n>=1e6) s='¥'+(n/1e6).toLocaleString('en-US',{maximumFractionDigits:2})+'M';
+    else if(n>=1e4) s='¥'+(n/1e3).toLocaleString('en-US',{maximumFractionDigits:0})+'k';
+    else s='¥'+n.toLocaleString('en-US');
+  } else {
+    const U = {ja:['億','万','円',''], zh:['亿','万','日元',''], ko:['억','만','엔',' ']}[lang] || ['億','万','円',''];
+    const sp=U[3];
+    if(n>=1e8){ const o=Math.floor(n/1e8), m=Math.round((n%1e8)/1e4); s=o+U[0]+(m?sp+m.toLocaleString('ja-JP')+U[1]:'')+sp+U[2]; }
+    else if(n>=1e4) s=Math.round(n/1e4).toLocaleString('ja-JP')+U[1]+sp+U[2];
+    else s=n.toLocaleString('ja-JP')+sp+U[2];
+  }
+  return (neg?'-':'')+s;
+}
+function fmtYen(n, lang){ n=Math.round(n); return lang==='en' ? '¥'+n.toLocaleString('en-US') : n.toLocaleString('ja-JP')+({ja:'円',zh:'日元',ko:' 엔'}[lang]||'円'); }
+function fmtDate(dayOfYear, lang){
+  const d=new Date(Date.UTC(2026,0,1)); d.setUTCDate(d.getUTCDate()+Math.max(0,Math.min(364,Math.round(dayOfYear))));
+  const m=d.getUTCMonth()+1, day=d.getUTCDate();
+  if(lang==='en') return d.toLocaleDateString('en-US',{month:'long',day:'numeric',timeZone:'UTC'});
+  if(lang==='ko') return `${m}월 ${day}일`;
+  return `${m}月${day}日`;
+}
+if(typeof module!=='undefined') module.exports={LANGS,T,PREF_KEYS,PREF_NAMES,fmtMoney,fmtYen,fmtDate};
+
+/* ===================== データベース（4言語） ===================== */
+const SRC = {
+  nta:'https://www.nta.go.jp/publication/pamph/gensen/nencho2026/pdf/301.pdf',
+  rate:'https://www.nta.go.jp/publication/pamph/gensen/nencho2026/pdf/115.pdf',
+  taikou:'https://www.mof.go.jp/tax_policy/tax_reform/outline/fy2026/08taikou_01.htm',
+  bouei:'https://www.mof.go.jp/tax_policy/tax_reform/outline/fy2026/08taikou_06.htm',
+  kenpo:'https://www.kyoukaikenpo.or.jp/news/r08_jan/2574.html',
+  kenpoPref:'https://www.kyoukaikenpo.or.jp/about/business/insurance_rate/premium_prefectures/r08/',
+  kosei:'https://www.nenkin.go.jp/service/kounen/hokenryo/hoshu/20150515-01.html',
+  kokunen:'https://www.nenkin.go.jp/service/kokunen/hokenryo/hokenryo.html',
+  nenkingaku:'https://www.nenkin.go.jp/oshirase/taisetu/kojin/2026/202604/0401.html',
+  koyo:'https://www.mhlw.go.jp/content/001672589.pdf',
+  yokohama:'https://www.city.yokohama.lg.jp/kurashi/koseki-zei-hoken/kokuho/hokenryo/r7hokennryouritu.html',
+  kokuhoMax:'https://www.mhlw.go.jp/content/12401000/001768124.pdf',
+  kouki:'https://www.mhlw.go.jp/stf/newpage_72371.html',
+  kaigo:'https://www.mhlw.go.jp/stf/newpage_40211.html',
+  shienkin:'https://www.mhlw.go.jp/content/12401000/001228302.pdf',
+  sake:'https://www.mof.go.jp/tax_policy/summary/consumption/d07_0.pdf',
+  tabako:'https://www.mof.go.jp/tax_information/images/image7.pdf',
+  gas:'https://www5.cao.go.jp/keizai-shimon/kaigi/minutes/2025/2025_shiryo07.pdf',
+  futan:'https://www.mof.go.jp/policy/budget/topics/futanritsu/index.htm',
+  yosan:'https://www.mof.go.jp/policy/budget/fiscal_condition/related_data/202604_01.pdf',
+  minkan:'https://www.nta.go.jp/information/release/kokuzeicho/2026/minkan_2026/pdf/01.pdf',
+  minkanDist:'https://www.nta.go.jp/publication/statistics/kokuzeicho/minkan2025/pdf/2025_001.pdf'
+};
+const ORG = {
+  nta:{ja:'国税庁',en:'National Tax Agency',zh:'国税厅',ko:'국세청'},
+  mof:{ja:'財務省',en:'Ministry of Finance',zh:'财务省',ko:'재무성'},
+  kenpo:{ja:'協会けんぽ',en:'Kyokai Kenpo',zh:'协会健保',ko:'협회건보'},
+  nenkin:{ja:'日本年金機構',en:'Japan Pension Service',zh:'日本年金机构',ko:'일본연금기구'},
+  mhlw:{ja:'厚生労働省',en:'Ministry of Health, Labour and Welfare',zh:'厚生劳动省',ko:'후생노동성'},
+  yokohama:{ja:'横浜市',en:'Yokohama City',zh:'横滨市',ko:'요코하마시'},
+  cao:{ja:'内閣府',en:'Cabinet Office',zh:'内阁府',ko:'내각부'}
+};
+const DB = [
+ {src:[['nta','nta'],['nta','rate'],['mof','taikou']], isNew:true,
+  ja:['所得税','個人の所得','5%〜45%の累進（7段階）。基礎控除は合計所得489万円以下で104万円、655万円以下67万円、2,350万円以下62万円（令和8・9年分）。給与所得控除の最低額は74万円。','令和8年分から基礎控除・給与所得控除を引上げ。給与だけなら年収178万円まで所得税ゼロ。'],
+  en:['Income tax','Personal income','Progressive 5%–45% (7 brackets). Basic deduction: ¥1.04M if total income ≤ ¥4.89M, ¥670k up to ¥6.55M, ¥620k up to ¥23.5M (2026–27). Minimum employment income deduction ¥740k.','Deductions raised from 2026: no income tax on salary up to ¥1.78M.'],
+  zh:['所得税','个人所得','5%〜45%累进（7档）。基础扣除：合计所得489万日元以下为104万日元，655万日元以下67万日元，2,350万日元以下62万日元（2026、27年）。工资所得扣除最低74万日元。','2026年起提高扣除额，仅有工资时年收入178万日元以下不缴所得税。'],
+  ko:['소득세','개인 소득','5%〜45% 누진(7단계). 기초공제는 합계소득 489만 엔 이하 104만 엔, 655만 엔 이하 67만 엔, 2,350만 엔 이하 62만 엔(2026·27년분). 급여소득공제 최저 74만 엔.','2026년분부터 공제 인상. 급여만 있으면 연봉 178만 엔까지 소득세 0.']},
+ {src:[['mof','bouei']], isNew:true,
+  ja:['復興特別所得税','所得税額','所得税額×2.1%（2026年分まで）','2027年から1.1%に引下げ、課税期間を2047年まで延長。'],
+  en:['Reconstruction surtax','Income tax amount','2.1% of income tax (through 2026)','Cut to 1.1% from 2027 and extended to 2047.'],
+  zh:['复兴特别所得税','所得税额','所得税额×2.1%（至2026年）','2027年起降至1.1%，征收期延长至2047年。'],
+  ko:['부흥특별소득세','소득세액','소득세액×2.1%(2026년분까지)','2027년부터 1.1%로 인하, 과세 기간 2047년까지 연장.']},
+ {src:[['mof','bouei']], isNew:true,
+  ja:['防衛特別所得税','所得税額','所得税額×1%','2027年1月から新設。復興と合わせて2.1%のまま。'],
+  en:['Defense surtax','Income tax amount','1% of income tax','New from January 2027; combined with reconstruction it stays 2.1%.'],
+  zh:['防卫特别所得税','所得税额','所得税额×1%','2027年1月起新设，与复兴税合计仍为2.1%。'],
+  ko:['방위특별소득세','소득세액','소득세액×1%','2027년 1월 신설. 부흥세와 합쳐 2.1% 유지.']},
+ {src:[], isNew:false,
+  ja:['住民税（所得割）','個人の所得','一律10%（道府県民税4%＋市町村民税6%）。基礎控除43万円。',''],
+  en:['Resident tax (income-based)','Personal income','Flat 10% (4% prefectural + 6% municipal). Basic deduction ¥430k.',''],
+  zh:['住民税（所得比例）','个人所得','统一10%（都道府县4%＋市町村6%）。基础扣除43万日元。',''],
+  ko:['주민세(소득할)','개인 소득','일률 10%(도도부현 4%＋시정촌 6%). 기초공제 43만 엔.','']},
+ {src:[], isNew:false,
+  ja:['住民税（均等割）＋森林環境税','1人あたり','均等割4,000円＋森林環境税1,000円＝年5,000円（標準）',''],
+  en:['Resident tax (flat) + forest tax','Per person','¥4,000 + forest environment tax ¥1,000 = ¥5,000/yr (standard)',''],
+  zh:['住民税（定额）＋森林环境税','每人','定额4,000日元＋森林环境税1,000日元＝每年5,000日元（标准）',''],
+  ko:['주민세(균등할)＋삼림환경세','1인당','균등할 4,000엔＋삼림환경세 1,000엔＝연 5,000엔(표준)','']},
+ {src:[['nenkin','kosei']], isNew:true,
+  ja:['厚生年金保険料','会社員の給与・賞与','18.3%を会社と本人で半分ずつ（本人9.15%）。標準報酬月額の上限65万円。','上限を2027年9月68万円→2028年9月71万円→2029年9月75万円へ段階的に引上げ。'],
+  en:['Employee pension premium','Salary & bonus','18.3%, split 50/50 (you pay 9.15%). Monthly earnings cap ¥650k.','Cap rises to ¥680k (Sep 2027), ¥710k (Sep 2028), ¥750k (Sep 2029).'],
+  zh:['厚生年金保险费','职员工资、奖金','18.3%，劳资各半（个人9.15%）。标准报酬月额上限65万日元。','上限将于2027年9月升至68万、2028年9月71万、2029年9月75万日元。'],
+  ko:['후생연금보험료','회사원 급여·상여','18.3%를 회사와 본인이 절반씩(본인 9.15%). 표준보수월액 상한 65만 엔.','상한을 2027년 9월 68만→2028년 9월 71만→2029년 9월 75만 엔으로 단계 인상.']},
+ {src:[['nenkin','kokunen']], isNew:false,
+  ja:['国民年金保険料','自営業・無職（20〜59歳）','月17,920円（令和8年度）','令和9年度は月18,290円の予定。'],
+  en:['National pension premium','Self-employed / unemployed (20–59)','¥17,920/month (FY2026)','¥18,290/month planned for FY2027.'],
+  zh:['国民年金保险费','个体户、无业（20〜59岁）','每月17,920日元（2026年度）','2027年度预计每月18,290日元。'],
+  ko:['국민연금보험료','자영업·무직(20〜59세)','월 17,920엔(2026년도)','2027년도는 월 18,290엔 예정.']},
+ {src:[['kenpo','kenpo'],['kenpo','kenpoPref']], isNew:true,
+  ja:['健康保険料（協会けんぽ）','会社員の給与・賞与','全国平均9.9%（新潟9.21%〜佐賀10.55%）を労使折半','2026年度は平均10.0%→9.9%に引下げ。'],
+  en:['Health insurance (Kyokai Kenpo)','Salary & bonus','National average 9.9% (Niigata 9.21% – Saga 10.55%), split 50/50','Average cut from 10.0% to 9.9% in FY2026.'],
+  zh:['健康保险费（协会健保）','职员工资、奖金','全国平均9.9%（新潟9.21%〜佐贺10.55%），劳资各半','2026年度平均由10.0%降至9.9%。'],
+  ko:['건강보험료(협회건보)','회사원 급여·상여','전국 평균 9.9%(니가타 9.21%〜사가 10.55%)를 노사 절반','2026년도 평균 10.0%→9.9% 인하.']},
+ {src:[['kenpo','kenpo']], isNew:true,
+  ja:['介護保険料（40〜64歳）','会社員の給与・賞与','1.62%を労使折半（協会けんぽ）','2026年度 1.59%→1.62%。'],
+  en:['Long-term care premium (40–64)','Salary & bonus','1.62%, split 50/50 (Kyokai Kenpo)','Up from 1.59% to 1.62% in FY2026.'],
+  zh:['护理保险费（40〜64岁）','职员工资、奖金','1.62%，劳资各半（协会健保）','2026年度由1.59%升至1.62%。'],
+  ko:['개호보험료(40〜64세)','회사원 급여·상여','1.62%를 노사 절반(협회건보)','2026년도 1.59%→1.62%.']},
+ {src:[['kenpo','kenpo'],['mhlw','shienkin']], isNew:true,
+  ja:['子ども・子育て支援金','医療保険料と一緒に徴収','0.23%を労使折半（協会けんぽ・2026年度）','2026年4月分から徴収開始。総額は0.6兆円→0.8兆円→1.0兆円（2028年度）へ増える。'],
+  en:['Child & childcare support levy','Collected with health insurance','0.23%, split 50/50 (Kyokai Kenpo, FY2026)','New from April 2026. Total grows ¥0.6T → ¥0.8T → ¥1.0T (FY2028).'],
+  zh:['儿童、育儿支援金','与医疗保险费一起征收','0.23%，劳资各半（协会健保、2026年度）','2026年4月起开始征收，总额由0.6万亿增至0.8万亿、1.0万亿日元（2028年度）。'],
+  ko:['아동·육아 지원금','의료보험료와 함께 징수','0.23%를 노사 절반(협회건보·2026년도)','2026년 4월분부터 징수. 총액 0.6조→0.8조→1.0조 엔(2028년도)으로 증가.']},
+ {src:[['mhlw','koyo']], isNew:true,
+  ja:['雇用保険料','会社員の給与','本人0.5%、会社0.85%（一般の事業）','2026年度 本人0.55%→0.5%に引下げ。'],
+  en:['Employment insurance','Salary','You 0.5%, employer 0.85% (general businesses)','Your share cut from 0.55% to 0.5% in FY2026.'],
+  zh:['雇佣保险费','职员工资','个人0.5%，公司0.85%（一般行业）','2026年度个人由0.55%降至0.5%。'],
+  ko:['고용보험료','회사원 급여','본인 0.5%, 회사 0.85%(일반 사업)','2026년도 본인 0.55%→0.5% 인하.']},
+ {src:[['yokohama','yokohama'],['mhlw','kokuhoMax']], isNew:true,
+  ja:['国民健康保険料','自営業・無職など','市区町村ごとに違う。例：横浜市は所得割 医療8.33%＋支援2.62%＋介護2.84%＋子ども0.34%＋1人ごとの均等割。上限は合計113万円。','2026年度から子ども・子育て支援金分が加わり、上限109万円→113万円。'],
+  en:['National Health Insurance','Self-employed, unemployed, etc.','Varies by city. Yokohama: income rate 8.33% medical + 2.62% support + 2.84% care + 0.34% child, plus a per-person amount. Cap ¥1.13M total.','Child-support portion added in FY2026; cap raised from ¥1.09M to ¥1.13M.'],
+  zh:['国民健康保险费','个体户、无业等','各市区町村不同。例：横滨市所得比例为医疗8.33%＋支援2.62%＋护理2.84%＋儿童0.34%，另加人均定额。上限合计113万日元。','2026年度起新增儿童育儿支援金部分，上限由109万升至113万日元。'],
+  ko:['국민건강보험료','자영업·무직 등','시구정촌마다 다름. 예: 요코하마시 소득할 의료 8.33%＋지원 2.62%＋개호 2.84%＋아동 0.34%＋1인당 균등할. 상한 합계 113만 엔.','2026년도부터 아동·육아 지원금분이 더해져 상한 109만→113만 엔.']},
+ {src:[['mhlw','kaigo']], isNew:false,
+  ja:['介護保険料（65歳以上）','年金・所得','市区町村ごと。基準額の全国平均は月6,225円（第9期：2024〜2026年度）。所得に応じた段階制。','2027年度から第10期で見直し。'],
+  en:['Long-term care premium (65+)','Pension & income','Set by each municipality. National average base ¥6,225/month (2024–26), tiered by income.','Reviewed for the 10th period from FY2027.'],
+  zh:['护理保险费（65岁以上）','养老金、所得','各市町村不同。基准额全国平均每月6,225日元（2024〜2026年度），按所得分档。','2027年度起第10期重新核定。'],
+  ko:['개호보험료(65세 이상)','연금·소득','시정촌별. 기준액 전국 평균 월 6,225엔(2024〜2026년도), 소득별 단계제.','2027년도부터 제10기로 재검토.']},
+ {src:[['mhlw','kouki']], isNew:true,
+  ja:['後期高齢者医療保険料','75歳以上','都道府県ごと。全国平均は均等割56,083円＋所得割10.17%（令和8・9年度）、子ども分は均等割1,351円＋0.25%。','1人あたり平均月7,989円（前期比+7.8%）。子ども分が新設。'],
+  en:['Late-stage elderly medical care','Age 75+','Set by prefecture. National average ¥56,083 per person + 10.17% of income (FY2026–27); child portion ¥1,351 + 0.25%.','Average ¥7,989/month (+7.8%). Child portion is new.'],
+  zh:['后期高龄者医疗保险费','75岁以上','各都道府县不同。全国平均：人均56,083日元＋所得10.17%（2026、27年度），儿童部分1,351日元＋0.25%。','人均每月7,989日元（较上期+7.8%），新设儿童部分。'],
+  ko:['후기고령자의료보험료','75세 이상','도도부현별. 전국 평균 균등할 56,083엔＋소득할 10.17%(2026·27년도), 아동분 1,351엔＋0.25%.','1인당 평균 월 7,989엔(+7.8%). 아동분 신설.']},
+ {src:[], isNew:false,
+  ja:['消費税','買い物・サービス','10%（うち国7.8%・地方2.2%）。食料品・新聞は軽減税率8%',''],
+  en:['Consumption tax','Purchases & services','10% (7.8% national, 2.2% local). Food and newspapers 8%.',''],
+  zh:['消费税','购物、服务','10%（国家7.8%、地方2.2%）。食品、报纸为8%轻减税率。',''],
+  ko:['소비세','쇼핑·서비스','10%(국가 7.8%·지방 2.2%). 식품·신문은 경감세율 8%.','']},
+ {src:[['mof','tabako']], isNew:true,
+  ja:['たばこ税','紙巻たばこ','1本15.244円（1箱20本で約305円）＋消費税','国のたばこ税を2027年4月から3年かけて1本あたり計1.5円引上げ。加熱式は2026年に課税見直し。'],
+  en:['Tobacco tax','Cigarettes','¥15.244 per stick (about ¥305 per pack of 20) + consumption tax','National tobacco tax rises by ¥1.5/stick in total over 3 years from April 2027. Heated tobacco reformed in 2026.'],
+  zh:['烟草税','卷烟','每支15.244日元（20支一包约305日元）＋消费税','国家烟草税自2027年4月起3年内每支合计提高1.5日元；加热烟2026年调整。'],
+  ko:['담배세','궐련','1개비 15.244엔(20개비 1갑 약 305엔)＋소비세','국가 담배세를 2027년 4월부터 3년간 개비당 총 1.5엔 인상. 가열식은 2026년 과세 개편.']},
+ {src:[['mof','sake']], isNew:true,
+  ja:['酒税','ビール系飲料など','ビール・発泡酒・新ジャンルは350mlあたり54.25円。チューハイ等は35円。','2026年10月にビール系の税率を一本化（ビールは減税、発泡酒は増税）。'],
+  en:['Liquor tax','Beer-type drinks, etc.','Beer, happoshu and “new genre” all ¥54.25 per 350ml; chu-hi ¥35.','Beer-type rates unified in October 2026 (beer down, happoshu up).'],
+  zh:['酒税','啤酒类饮料等','啤酒、发泡酒、新类型每350ml均为54.25日元；酎嗨等为35日元。','2026年10月啤酒类税率统一（啤酒减税、发泡酒增税）。'],
+  ko:['주세','맥주류 음료 등','맥주·발포주·신장르 모두 350ml당 54.25엔. 츄하이 등 35엔.','2026년 10월 맥주류 세율 일원화(맥주 감세, 발포주 증세).']},
+ {src:[['cao','gas']], isNew:true,
+  ja:['ガソリン税','ガソリン1L','揮発油税＋地方揮発油税で28.7円/L（本則）＋石油石炭税等 約2.8円/L','暫定税率25.1円/Lは2025年12月31日に廃止。軽油の暫定税率は2026年4月1日に廃止。'],
+  en:['Gasoline tax','Per liter','¥28.7/L (base rate) + petroleum & coal tax etc. about ¥2.8/L','The extra ¥25.1/L “provisional rate” ended Dec 31, 2025; diesel’s ended Apr 1, 2026.'],
+  zh:['汽油税','每升汽油','挥发油税＋地方挥发油税每升28.7日元（本则）＋石油煤炭税等约2.8日元','每升25.1日元的暂定税率于2025年12月31日废止；柴油于2026年4月1日废止。'],
+  ko:['휘발유세','휘발유 1L','휘발유세＋지방휘발유세 28.7엔/L(본칙)＋석유석탄세 등 약 2.8엔/L','잠정세율 25.1엔/L는 2025년 12월 31일 폐지. 경유는 2026년 4월 1일 폐지.']},
+ {src:[], isNew:false,
+  ja:['自動車税（種別割）・軽自動車税','車の所有','1.0〜1.5Lで年30,500円、軽自動車で年10,800円など（2019年10月以降の新車登録）',''],
+  en:['Automobile tax','Car ownership','¥30,500/yr for 1.0–1.5L, ¥10,800/yr for kei cars (registered after Oct 2019)',''],
+  zh:['汽车税、轻型车税','拥有汽车','1.0〜1.5L每年30,500日元，轻型车每年10,800日元（2019年10月后登记）',''],
+  ko:['자동차세·경자동차세','자동차 보유','1.0〜1.5L 연 30,500엔, 경자동차 연 10,800엔 등(2019년 10월 이후 등록)','']},
+ {src:[], isNew:false,
+  ja:['固定資産税・都市計画税','土地・建物','評価額×1.4%（標準）＋都市計画税 最大0.3%',''],
+  en:['Property tax','Land & buildings','1.4% of assessed value (standard) + city planning tax up to 0.3%',''],
+  zh:['固定资产税、城市规划税','土地、建筑','评估额×1.4%（标准）＋城市规划税最高0.3%',''],
+  ko:['고정자산세·도시계획세','토지·건물','평가액×1.4%(표준)＋도시계획세 최대 0.3%','']},
+ {src:[], isNew:false,
+  ja:['個人事業税','自営業の所得','所得から290万円を引いた額×5%（多くの業種）',''],
+  en:['Enterprise tax','Self-employed income','5% of (income − ¥2.9M) for most businesses',''],
+  zh:['个人事业税','个体户所得','（所得−290万日元）×5%（多数行业）',''],
+  ko:['개인사업세','자영업 소득','(소득−290만 엔)×5%(대부분 업종)','']},
+ {src:[['nta','minkan'],['nta','minkanDist']], isNew:true,
+  ja:['平均給与（民間）','1年を通じて勤務した人','487万円（男性597万円・女性342万円）。1,000万円超は6.6%。','令和7年分は前年比1.9%増。'],
+  en:['Average salary (private sector)','Full-year workers','¥4.87M (men ¥5.97M, women ¥3.42M). 6.6% earn over ¥10M.','Up 1.9% in 2025.'],
+  zh:['平均工资（民间）','全年工作者','487万日元（男性597万、女性342万）。超过1,000万日元者占6.6%。','2025年同比增长1.9%。'],
+  ko:['평균 급여(민간)','1년 내내 근무한 사람','487만 엔(남성 597만·여성 342만). 1,000만 엔 초과는 6.6%.','2025년분 전년 대비 1.9% 증가.']},
+ {src:[['mof','futan']], isNew:false,
+  ja:['国民負担率（国全体）','国民所得に対する比率','45.7%（租税28.0%＋社会保障17.6%、令和8年度見通し）','令和7年度の46.1%から0.4ポイント低下の見通し。'],
+  en:['National burden ratio','Share of national income','45.7% (taxes 28.0% + social security 17.6%, FY2026 outlook)','Down 0.4 points from 46.1% in FY2025.'],
+  zh:['国民负担率（全国）','占国民所得比例','45.7%（租税28.0%＋社会保障17.6%，2026年度预测）','较2025年度的46.1%下降0.4个百分点。'],
+  ko:['국민부담률(전체)','국민소득 대비','45.7%(조세 28.0%＋사회보장 17.6%, 2026년도 전망)','2025년도 46.1%에서 0.4%p 하락 전망.']},
+ {src:[['mof','yosan']], isNew:false,
+  ja:['国の一般会計予算','令和8年度','歳出122.3兆円：社会保障39.1兆、国債費31.3兆、地方交付税20.9兆、防衛9.0兆、公共事業6.1兆、教育・科学6.0兆など',''],
+  en:['National general budget','FY2026','¥122.3T: social security 39.1T, debt service 31.3T, local grants 20.9T, defense 9.0T, public works 6.1T, education & science 6.0T, etc.',''],
+  zh:['国家一般会计预算','2026年度','支出122.3万亿日元：社会保障39.1万亿、国债费31.3万亿、地方交付税20.9万亿、防卫9.0万亿、公共事业6.1万亿、教育、科学6.0万亿等',''],
+  ko:['국가 일반회계 예산','2026년도','세출 122.3조 엔: 사회보장 39.1조, 국채비 31.3조, 지방교부세 20.9조, 방위 9.0조, 공공사업 6.1조, 교육·과학 6.0조 등','']},
+ {src:[['nenkin','nenkingaku']], isNew:true,
+  ja:['公的年金（受け取る側）','65歳から','基礎年金 満額 月70,608円（令和8年度）','令和8年度は基礎年金1.9%、厚生年金2.0%引上げ。'],
+  en:['Public pension (benefit)','From age 65','Full basic pension ¥70,608/month (FY2026)','Basic pension +1.9%, employee pension +2.0% in FY2026.'],
+  zh:['公共养老金（领取）','65岁起','基础养老金全额每月70,608日元（2026年度）','2026年度基础养老金上调1.9%，厚生年金上调2.0%。'],
+  ko:['공적연금(수령)','65세부터','기초연금 만액 월 70,608엔(2026년도)','2026년도 기초연금 1.9%, 후생연금 2.0% 인상.']}
+];
+if(typeof module!=='undefined') module.exports={SRC,ORG,DB};
+
+
+/* ===================== 言語 ===================== */
+const $=id=>document.getElementById(id);
+let lang='ja', mode='easy';
+try{ const s=localStorage.getItem('taxsim-lang'); if(s&&T[s]) lang=s; else { const n=(navigator.language||'ja').slice(0,2); lang = T[n]?n:'ja'; } }catch(_){ const n=(navigator.language||'ja').slice(0,2); lang=T[n]?n:'ja'; }
+function t(k,p){ let s=(T[lang]&&T[lang][k]!=null)?T[lang][k]:T.ja[k]; if(typeof s!=='string') return s; if(p) for(const [a,b] of Object.entries(p)) s=s.split('{'+a+'}').join(b); return s; }
+const M = n=>fmtMoney(n,lang), Y = n=>fmtYen(n,lang);
+function prefName(k){ if(lang==='ja') return k; const i=PREF_KEYS.indexOf(k); return (PREF_NAMES[lang]||[])[i]||k; }
+function applyLang(){
+  document.documentElement.lang = lang==='zh'?'zh-CN':lang;
+  document.title = t('title');
+  $('h1').innerHTML = t('title').replace(/(いくら|how much|多少|얼마나)/i,'<em>$1</em>');
+  document.querySelectorAll('[data-t]').forEach(e=>{ e.textContent=t(e.dataset.t); });
+  document.querySelectorAll('[data-tp]').forEach(e=>{ e.placeholder=t(e.dataset.tp); });
+  const cur=$('pref').value||'全国平均';
+  $('pref').innerHTML = PREF_KEYS.map(k=>`<option value="${k}">${prefName(k)}</option>`).join(''); $('pref').value=cur;
+  $('aboutList').innerHTML = t('about').map(s=>`<li>${s}</li>`).join('');
+  $('chart').setAttribute('aria-label', t('chartH'));
+  syncType(); renderDB(); if(chart){ chart.destroy(); chart=null; } render();
+}
+
+/* ===================== 入力 ===================== */
+function num(id,def=0){ const v=parseFloat($(id).value); return isNaN(v)?def:v; }
+function getInput(){
+  const d = mode==='detail';
+  const kids = d ? ($('kids').value||'').split(/[,、，\s]+/).map(s=>parseInt(s,10)).filter(n=>!isNaN(n)&&n>=0&&n<40).slice(0,10) : [];
+  const pref = $('pref').value || '全国平均';
+  return sanitize({
+    type:$('type').value, age:num('age',35), inc:num('inc',500)*10000, pref,
+    spouse: d && $('spouse').checked, kids,
+    ideco: d? num('ideco')*10000:0, life: d? +$('life').value:0,
+    hrate: d? num('hrate',PREF[pref][0]) : PREF[pref][0], bonus: d? num('bonus'):0,
+    showEmployer: d && $('showEmployer').checked,
+    aoiro: !d || $('aoiro').checked, jigyo: !d || $('jigyo').checked,
+    K: d ? {rate:num('nkRate',KOKUHO_DEF.rate), eq:num('nkEq',KOKUHO_DEF.eq), kRate:num('nkKRate',KOKUHO_DEF.kRate), kEq:num('nkKEq',KOKUHO_DEF.kEq)} : Object.assign({},KOKUHO_DEF),
+    spend: d && $('spend').value!=='' ? num('spend')*10000 : null,
+    spendR: d && $('spendR').value!=='' ? num('spendR')*10000 : null,
+    food: (d? num('food',25):25)/100,
+    tabaco: d? num('tabaco'):0, beer: d? num('beer'):0,
+    car: d? $('car').value:'none', gas: d? num('gas'):0,
+    kotei: d? num('kotei')*10000:0,
+    start: d? num('start',22):22, retire: d? num('retire',65):65,
+    end: d? num('life_end',85):85, growth: d? num('growth')/100:0,
+    curve: !d || $('curve').checked
+  });
+}
+
+/* ===================== 表示 ===================== */
+const COLORS = {it:'#c8372d', rt:'#e07b39', pen:'#2f6db5', health:'#3c9a8f', koyo:'#8a63b8', jigyo:'#a0522d', cons:'#d4a72c', other:'#7a7f88', employer:'#b9bcc4'};
+function keys(I){ const k=['it','rt','pen','health']; k.push(I.type==='emp'?'koyo':'jigyo'); k.push('cons','other'); if(I.showEmployer) k.push('employer'); return k; }
+function total(r,K){ let s=0; for(const k of K) s+=r[k]; return s; }
+function barHTML(parts){ const s=parts.reduce((a,p)=>a+Math.max(0,p.v),0)||1; return parts.filter(p=>p.v>0).map(p=>`<i style="width:${p.v/s*100}%;background:${COLORS[p.k]}" title="${t('SHORT')[p.k]}"></i>`).join(''); }
+function tableHTML(parts, tot, label, fmt){
+  let h=`<tr><th>${t('colItem')}</th><th class="n">${label}</th><th class="n">${t('colShare')}</th></tr>`;
+  for(const p of parts){ if(p.v<=0) continue; h+=`<tr><td><span class="dot" style="background:${COLORS[p.k]}"></span>${t('NAMES')[p.k]}</td><td class="n">${fmt(p.v)}</td><td class="n">${tot>0?(p.v/tot*100).toFixed(1):'0.0'}%</td></tr>`; }
+  return h+`<tr><td><b>${t('total')}</b></td><td class="n"><b>${fmt(tot)}</b></td><td class="n">100%</td></tr>`;
+}
+function syncType(){
+  const self=$('type').value==='self';
+  const retired = num('age',35) >= (mode==='detail'?num('retire',65):65);
+  $('incLabel').textContent = t(retired ? (self?'incomeRetSelf':'incomeRet') : (self?'incomeSelf':'income'));
+  $('g-emp').classList.toggle('hide',self); $('g-self').classList.toggle('hide',!self);
+  $('h-emp').textContent = t(self?'selfH':'empH');
+}
+
+let chart, lastShare='';
+const pastShade = { id:'pastShade', beforeDatasetsDraw(c,args,opt){ const i=opt.index; if(i==null||i<=0) return;
+  const x=c.scales.x, a=c.chartArea; const right=(x.getPixelForValue(i-1)+x.getPixelForValue(i))/2;
+  c.ctx.save(); c.ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--past'); c.ctx.fillRect(a.left,a.top,right-a.left,a.bottom-a.top); c.ctx.restore(); } };
+
+function render(){
+  syncType();
+  const I=getInput();
+  const fixes=[];
+  if(num('age',35)!==I.age) fixes.push(t('fix_age',{v:I.age}));
+  if(mode==='detail'){ if(num('retire',65)!==I.retire) fixes.push(t('fix_retire',{v:I.retire})); if(num('life_end',85)!==I.end) fixes.push(t('fix_end',{v:I.end})); }
+  if($('inc').value==='') fixes.push(t('fix_inc'));
+  $('fixNote').textContent = fixes.length ? t('fixPrefix')+fixes.join(lang==='en'?'; ':'、') : '';
+  const {rows, now, pension} = computeAll(I);
+  const K = keys(I);
+
+  // 今年
+  const yt = total(now,K), base = now.gross + now.pensionRecv, working = I.age < I.retire && I.age >= I.start;
+  const ratio = base>0 ? yt/base : 0;
+  $('yTotal').textContent = M(yt);
+  $('yLead').textContent = I.age>=I.retire ? t('leadRet',{v:M(now.pensionRecv)}) : t(I.type==='emp'?'leadEmp':'leadSelf',{v:M(now.gross)});
+  $('kMonth').textContent = M(yt/12); $('kDay').textContent = Y(yt/365);
+  $('kRateL').textContent = t(I.type==='emp' && working ? 'rateGross' : 'rateInc');
+  $('kRate').textContent = base>0 ? (ratio*100).toFixed(1)+'%' : '—';
+  $('kNet').textContent = t('netFmt',{y:M(now.net), m:M(now.net/12)});
+
+  // 数字でみる
+  const r1=Math.min(ratio,1);
+  $('fDay').textContent = base>0 ? fmtDate(r1*365-1, lang) : '—';
+  $('fDayTxt').innerHTML = base>0 ? t('freedomTxt',{d:fmtDate(r1*365-1, lang)}) : '';
+  $('fDayBar').style.width = (r1*100)+'%';
+  const mins = Math.round(r1*480);
+  $('fHour').textContent = base>0 ? (lang==='en'?`${Math.floor(mins/60)}h ${mins%60}m`: lang==='ko'?`${Math.floor(mins/60)}시간 ${mins%60}분` : lang==='zh'?`${Math.floor(mins/60)}小时${mins%60}分`:`${Math.floor(mins/60)}時間${mins%60}分`) : '—';
+  $('fHourTxt').innerHTML = base>0 ? t('hoursTxt',{h:Math.floor(mins/60), m:mins%60}) : '';
+  $('fHourBar').style.width = (r1*100)+'%';
+  const showRank = I.age < I.retire && now.gross>0;
+  $('fRankBox').classList.toggle('hide', !showRank);
+  if(showRank){ const p=topPercent(now.gross); const ps = p<1?p.toFixed(1):Math.round(p);
+    $('fRank').textContent = (lang==='en'?'Top ':lang==='ko'?'상위 ':lang==='zh'?'前':'上位')+ps+'%';
+    $('fRankTxt').innerHTML = t('rankTxt',{p:ps}); $('fRankBar').style.width=(100-p)+'%'; }
+  const secs = budgetSeconds(yt);
+  $('fSec').textContent = (secs<10?secs.toFixed(2):secs.toFixed(1)) + (lang==='en'?' sec':lang==='ko'?'초':'秒');
+  $('fSecTxt').innerHTML = t('secTxt',{s:M(BUDGET_TOTAL/(365*24*3600)), x:secs<10?secs.toFixed(2):secs.toFixed(1)});
+
+  $('empNote').textContent = I.type==='emp' && working && !I.showEmployer ? t('empNote',{v:M(now.employer)}) : '';
+  const yParts = K.map(k=>({k, v:now[k]}));
+  $('yBar').innerHTML = barHTML(yParts);
+  $('yTable').innerHTML = tableHTML(yParts, yt, t('colYear'), Y);
+
+  // 比較
+  const direct = now.it+now.rt+now.pen+now.health+now.koyo+now.jigyo;
+  const myRate = base>0 ? direct/base*100 : 0, myAll = base>0 ? (direct+now.cons+now.other)/base*100 : 0;
+  const rowsC = [[t('cmpDirect'), myRate, COLORS.it], [t('cmpAll'), myAll, COLORS.rt], [t('cmpNation'), 45.7, '#7a7f88'], [t('cmpTax'), 28.0, '#a4a6ad'], [t('cmpSoc'), 17.6, '#c4c6cc']];
+  $('compare').innerHTML = rowsC.map(([l,v,c])=>`<span>${l}</span><div class="track"><i style="width:${Math.min(100,v/60*100)}%;background:${c}"></i></div><b>${v.toFixed(1)}%</b>`).join('');
+
+  // 使い道
+  const kokuzei = now.it + now.cons*0.78;
+  $('useLead').innerHTML = t('useLead',{v:M(kokuzei)});
+  const bt = BUDGET.reduce((s,b)=>s+b[1],0), bn=t('bud');
+  $('use').innerHTML = BUDGET.map(([n,v],i)=>`<div class="row"><span>${bn[i]}</span><b>${M(kokuzei*v/bt)}</b><div class="track"><i style="width:${v/bt*100/0.35}%"></i></div></div>`).join('');
+
+  // 生涯
+  let L={}, past=0, fut=0, lifeInc=0, pensionTot=0;
+  for(const k of K) L[k]=0;
+  for(const r of rows){ const s=total(r,K); for(const k of K) L[k]+=r[k]; if(r.age<I.age) past+=s; else fut+=s; lifeInc += r.gross + r.pensionRecv; pensionTot += r.pensionRecv; }
+  const lt = past+fut;
+  $('lLeadTop').textContent = t('lifeLead',{a:rows[0].age, b:I.end});
+  $('lTotal').textContent = M(lt);
+  $('lPast').textContent = M(past); $('lFuture').textContent = M(fut);
+  $('lRate').textContent = lifeInc>0 ? (lt/lifeInc*100).toFixed(1)+'%' : '—';
+  $('lPension').innerHTML = `${t('pensionYear',{v:M(pension)})}<br><span class="note">${t('pensionTotal',{v:M(pensionTot)})}</span>`;
+  $('lYears').innerHTML = t('lifeYearsTxt',{n:(lt/AVG_SALARY).toFixed(1)});
+  const lParts = K.map(k=>({k, v:L[k]}));
+  $('lBar').innerHTML = barHTML(lParts);
+  $('lTable').innerHTML = tableHTML(lParts, lt, t('colLife'), M);
+  const S=t('SHORT');
+  let yh = `<tr><th>${t('colAge')}</th><th>${t('colYr')}</th><th class="n">${t('colInc')}</th>${K.map(k=>`<th class="n">${S[k]}</th>`).join('')}<th class="n">${t('total')}</th></tr>`;
+  for(const r of rows){ yh += `<tr${r.age===I.age?' class="me"':''}><td>${r.age}</td><td>${r.year}</td><td class="n">${M(r.gross+r.pensionRecv)}</td>${K.map(k=>`<td class="n">${(r[k]/1e4).toFixed(1)}</td>`).join('')}<td class="n"><b>${(total(r,K)/1e4).toFixed(1)}</b></td></tr>`; }
+  $('yearTable').innerHTML = yh + `<tr><td colspan="${K.length+4}" class="note">${t('manNote')}</td></tr>`;
+
+  // 早見表
+  const QM = lang==='en' ? M : (n=>Math.round(n/1e4).toLocaleString('ja-JP'));
+  $('quickNote').textContent = t('quickNote',{p:prefName(I.pref)}) + (lang==='en'?'':' '+({ja:'単位：万円',zh:'单位：万日元',ko:'단위: 만 엔'}[lang]));
+  let q=`<tr><th>${t('colGross')}</th><th class="n">${t('colTaxes')}</th><th class="n">${t('colNet')}</th><th class="n">${t('colRate')}</th><th class="n">${t('colTop')}</th></tr>`;
+  const KQ=['it','rt','pen','health','koyo'];
+  const mine = I.type==='emp' && working ? Math.round(now.gross/1e6)*1e6 : -1;
+  for(const g of [200,300,400,500,600,700,800,1000,1200,1500,2000,3000]){
+    const QI=sanitize(defaultInput({inc:g*1e4, age:35, pref:I.pref, hrate:PREF[I.pref][0]})); const qr=computeYear(QI,35,0);
+    const tx=total(qr,KQ); q+=`<tr${g*1e4===mine?' class="me"':''}><td>${QM(g*1e4)}</td><td class="n">${QM(tx)}</td><td class="n">${QM(g*1e4-tx)}</td><td class="n">${(tx/(g*1e4)*100).toFixed(1)}%</td><td class="n">${topPercent(g*1e4).toFixed(1)}%</td></tr>`;
+  }
+  $('quick').innerHTML=q;
+
+  // シェア
+  $('scWho').textContent = `${I.age}${t('ageU')} · ${M(base)} · ${prefName(I.pref)}`;
+  $('scYear').textContent = M(yt); $('scLife').textContent = M(lt);
+  $('scFoot').textContent = base>0 ? `${t('freedom')}: ${fmtDate(r1*365-1,lang)} / ${(ratio*100).toFixed(0)}%` : '';
+  lastShare = t('shareTxt',{inc:M(base), age:I.age, y:M(yt), m:M(yt/12), r:(ratio*100).toFixed(0), d:fmtDate(r1*365-1,lang), end:I.end, l:M(lt)});
+  $('shareText').value = lastShare + ' #' + t('hashtag');
+  $('xBtn').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(lastShare) + '&hashtags=' + encodeURIComponent(t('hashtag'));
+
+  // グラフ
+  const labels = rows.map(r=>`${r.age}`);
+  const idx = rows.findIndex(r=>r.age===I.age);
+  const ds = K.map(k=>({label:S[k], data:rows.map(r=>+(r[k]/1e4).toFixed(1)), backgroundColor:COLORS[k], borderWidth:0, stack:'s', barPercentage:0.95, categoryPercentage:0.95}));
+  $('legend').innerHTML = K.map(k=>`<span><span class="dot" style="background:${COLORS[k]}"></span>${S[k]}</span>`).join('');
+  if(!window.Chart){ $('legend').innerHTML += `<span>${t('chartFail')}</span>`; return; }
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches; const tc = dark?'#a4a6ad':'#5f6168', gc = dark?'#33343a':'#e9e7e1';
+  const unitY = lang==='en' ? (v=>'¥'+(v/100).toFixed(v%100?1:0)+'M') : (v=>v+t('chartUnit'));
+  const fmtTip = v => lang==='en' ? M(v*1e4) : v+t('chartUnit');
+  if(chart){ chart.data.labels=labels; chart.data.datasets=ds; chart.options.plugins.pastShade.index=idx; chart.update(); }
+  else {
+    chart = new Chart($('chart'), {type:'bar', data:{labels, datasets:ds}, plugins:[pastShade],
+      options:{responsive:true, maintainAspectRatio:false, animation:{duration:200}, interaction:{mode:'index', intersect:false},
+        plugins:{pastShade:{index:idx}, legend:{display:false},
+          tooltip:{itemSort:(a,b)=>b.parsed.y-a.parsed.y, filter:i=>i.parsed.y>0, callbacks:{
+            title:it=>(lang==='en'?'Age ':'')+it[0].label+t('ageSuffix')+(it[0].dataIndex===chart.options.plugins.pastShade.index?t('nowMark'):''),
+            footer:it=>t('chartTotal')+' '+fmtTip(+it.reduce((s,i)=>s+i.parsed.y,0).toFixed(1)),
+            label:c=>`${c.dataset.label}: ${fmtTip(c.parsed.y)}`}}},
+        scales:{x:{stacked:true, ticks:{color:tc, maxRotation:0, autoSkipPadding:10}, grid:{display:false}}, y:{stacked:true, ticks:{color:tc, callback:unitY}, grid:{color:gc}}}}});
+  }
+}
+
+/* ===================== データベース ===================== */
+function renderDB(){
+  const q = ($('dbq').value||'').trim().toLowerCase();
+  const C=t('dbCols');
+  let h=`<tr>${C.map(c=>`<th>${c}</th>`).join('')}</tr>`, n=0;
+  for(const e of DB){
+    const [name,w,r,c] = e[lang]||e.ja;
+    if(q && ![name,w,r,c,...e.ja].join(' ').toLowerCase().includes(q)) continue; n++;
+    const src = e.src.map(([o,k])=>`<a href="${SRC[k]}" target="_blank" rel="noopener">${ORG[o][lang]||ORG[o].ja}</a>`).join('<br>')||'—';
+    h+=`<tr><td>${name}${e.isNew?`<br><span class="pill">${t('changed')}</span>`:''}</td><td>${w}</td><td>${r}</td><td>${c||'—'}</td><td>${src}</td></tr>`;
+  }
+  if(!n) h+=`<tr><td colspan="5" class="note">${t('noMatch')}</td></tr>`;
+  $('dbTable').innerHTML=h;
+  const P=t('prefCols');
+  let p=`<tr><th>${P[0]}</th><th class="n">${P[1]}</th><th class="n">${P[2]}</th><th class="n">${P[3]}</th></tr>`;
+  for(const k of PREF_KEYS){ const v=PREF[k]; p+=`<tr${k==='全国平均'?' style="font-weight:700"':''}><td>${prefName(k)}</td><td class="n">${v[0].toFixed(2)}%</td><td class="n">${Y(v[1])}</td><td class="n">${v[2].toFixed(2)}%</td></tr>`; }
+  p+=`<tr><td colspan="4" class="note">${t('srcLabel')}: <a href="${SRC.kenpoPref}" target="_blank" rel="noopener">${ORG.kenpo[lang]}</a> / <a href="${SRC.kouki}" target="_blank" rel="noopener">${ORG.mhlw[lang]}</a></td></tr>`;
+  $('prefTable').innerHTML=p;
+}
+
+/* ===================== イベント ===================== */
+function showTab(tb){
+  if(!['sim','db','about'].includes(tb)) tb='sim';
+  document.querySelectorAll('nav.tabs a').forEach(x=>x.classList.toggle('on',x.dataset.tab===tb));
+  ['sim','db','about'].forEach(k=>$('tab-'+k).classList.toggle('hide', k!==tb));
+}
+window.addEventListener('hashchange',()=>{ showTab(location.hash.slice(1)); window.scrollTo({top:0}); });
+document.querySelectorAll('nav.tabs a').forEach(a=>a.addEventListener('click',e=>{ e.preventDefault(); const tb=a.dataset.tab; try{ history.replaceState(null,'','#'+tb); }catch(_){} showTab(tb); window.scrollTo({top:0}); }));
+document.querySelectorAll('#mode button').forEach(b=>b.addEventListener('click',()=>{
+  mode=b.dataset.v; document.querySelectorAll('#mode button').forEach(x=>x.classList.toggle('on',x===b));
+  $('detail').classList.toggle('hide', mode!=='detail'); render();
+}));
+$('lang').innerHTML = Object.entries(LANGS).map(([k,v])=>`<option value="${k}">${v}</option>`).join(''); $('lang').value=lang;
+$('lang').addEventListener('change',()=>{ lang=$('lang').value; try{ localStorage.setItem('taxsim-lang',lang); }catch(_){} applyLang(); });
+$('pref').innerHTML = PREF_KEYS.map(k=>`<option value="${k}">${k}</option>`).join('');
+$('pref').addEventListener('change',()=>{ $('hrate').value = PREF[$('pref').value][0].toFixed(2); });
+$('nkRate').value=KOKUHO_DEF.rate.toFixed(2); $('nkEq').value=KOKUHO_DEF.eq; $('nkKRate').value=KOKUHO_DEF.kRate; $('nkKEq').value=KOKUHO_DEF.kEq;
+let tm; document.querySelectorAll('#tab-sim input,#tab-sim select').forEach(el=>{ el.addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(render,120);}); el.addEventListener('change',()=>{clearTimeout(tm);tm=setTimeout(render,50);}); });
+$('dbq').addEventListener('input',renderDB);
+$('copyBtn').addEventListener('click',async()=>{
+  try{ await navigator.clipboard.writeText($('shareText').value); $('copyMsg').textContent=t('copied'); }
+  catch(_){ const x=$('shareText'); x.focus(); x.select(); $('copyMsg').textContent=t('selected'); }
+});
+showTab(location.hash.slice(1)); applyLang();
+</script>
+</body>
+</html>
